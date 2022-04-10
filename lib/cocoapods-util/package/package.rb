@@ -20,6 +20,7 @@ module Pod
               [
                 ['--force',     'Overwrite existing files.'],
                 ['--framework',   'Generate static framework.'],
+                ['--xcframework',   'Generate static xcframework.'],
                 ['--local',     'Use local state rather than published versions.'],
                 ['--configuration', 'Build the specified configuration (e.g. Debug). Defaults to Release'],
                 ['--subspecs', 'Only include the given subspecs'],
@@ -34,8 +35,11 @@ module Pod
     
             def initialize(argv)
               @framework = argv.flag?('framework')
+              @xcframework = argv.flag?('xcframework')
               @local = argv.flag?('local', false)
-              @package_type = if @framework
+              @package_type = if @xcframework
+                                :static_xcframework
+                              elsif @framework
                                 :static_framework
                               else
                                 :static_library
