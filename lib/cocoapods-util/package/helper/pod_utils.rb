@@ -4,12 +4,8 @@ module Pod
       class Package < Util
         private
 
-        def build_static_sandbox(dynamic)
-          static_sandbox_root = if dynamic
-                                  Pathname.new(config.sandbox_root + '/Static')
-                                else
-                                  Pathname.new(config.sandbox_root)
-                                end
+        def build_static_sandbox
+          static_sandbox_root = Pathname.new(config.sandbox_root)
           Sandbox.new(static_sandbox_root)
         end
 

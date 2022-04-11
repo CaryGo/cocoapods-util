@@ -83,61 +83,55 @@ module Pod
     end
 
     def build_static_xcframework
-      UI.puts("Building static xcframework #{@spec} with configuration #{@config}")
+      build_static_framework
 
-      defines = compile
-      build_sim_libraries(defines)
+      UI.puts("Generate static xcframework #{@spec} with configuration #{@config}")
+
+      output = @fwk.versions_path + Pathname.new(@spec.name)
+      archs = `lipo -archs #{output}`.split
+      os_archs = archs & ['arm64', 'armv7', 'armv7s']
+      sim_archs = archs & ['i386', 'x86_64']
 
       frameworks_path = Array.new()
-      # 1. build iphoneos
-      libs_of_iphoneos = static_libs_in_sandbox('build')
-      if libs_of_iphoneos.count > 0
-        available_archs = ios_architectures & ['arm64', 'armv7', 'armv7s']
-        libs = available_archs.map do |arch|
-          library = "#{@static_sandbox_root}/build/package-#{arch}.a"
-          `libtool -arch_only #{arch} -static -o #{library} #{libs_of_iphoneos.join(' ')}`
-          library
+      # 1. copy iphoneos framework
+      if os_archs.count > 0
+        path = Pathname.new("#{@platform.name.to_s}/iphoneos")
+        path.mkdir unless path.exist?
+        `cp -a #{@fwk.fwk_path} #{path}/`
+        extract_archs = os_archs.map do |arch|
+          extract_arch = "-extract #{arch}"
+          extract_arch
         end
-        create_framework("#{@platform.name.to_s}/iphoneos")
-        output = @fwk.versions_path + Pathname.new(@spec.name)
-        `lipo -create -output #{output} #{libs.join(' ')}`
-        copy_headers
-        copy_license
-        copy_resources
 
-        frameworks_path += ["-framework #{@platform.name.to_s}/iphoneos/#{@spec.name}.framework"]
+        fwk_path = platform_path = Pathname.new("#{path}/#{@spec.name}.framework")
+        frameworks_path += ["#{fwk_path}"]
+        `lipo #{extract_archs.join(' ')} "#{output}" -o "#{fwk_path}/Versions/A/#{@spec.name}"`
       end
-
-      # 2. build iphonesimulation
-      libs_of_iphonesimulation = static_libs_in_sandbox('build-sim')
-      if libs_of_iphonesimulation.count > 0
-        available_archs = ios_architectures & ['i386', 'x86_64']
-        libs = available_archs.map do |arch|
-          library = "#{@static_sandbox_root}/build/package-#{arch}.a"
-          `libtool -arch_only #{arch} -static -o #{library} #{libs_of_iphonesimulation.join(' ')}`
-          library
+      # 2. copy iphonesimulation framework
+      if sim_archs.count > 0
+        path = Pathname.new("#{@platform.name.to_s}/iphonesimulation")
+        path.mkdir unless path.exist?
+        `cp -a #{@fwk.fwk_path} #{path}/`
+        extract_archs = sim_archs.map do |arch|
+          extract_arch = "-extract #{arch}"
+          extract_arch
         end
-        create_framework("#{@platform.name.to_s}/iphonesimulation")
-        output = @fwk.versions_path + Pathname.new(@spec.name)
-        `lipo -create -output #{output} #{libs.join(' ')}`
-        copy_headers
-        copy_license
-        copy_resources
 
-        frameworks_path += ["-framework #{@platform.name.to_s}/iphonesimulation/#{@spec.name}.framework"]
+        fwk_path = platform_path = Pathname.new("#{path}/#{@spec.name}.framework")
+        frameworks_path += ["#{fwk_path}"]
+        `lipo #{extract_archs.join(' ')} "#{output}" -o "#{fwk_path}/Versions/A/#{@spec.name}"`
       end
 
       # 3. build xcframework
-      command = "xcodebuild -create-xcframework #{frameworks_path.join(' ')} -output #{@platform.name.to_s}/#{@spec.name}.xcframework 2>&1"
+      command = "xcodebuild -create-xcframework -framework #{frameworks_path.join(' -framework ')} -output #{@platform.name.to_s}/#{@spec.name}.xcframework 2>&1"
       output = `#{command}`.lines.to_a
-
-      # 4. remove iphone os/simulation paths
-      ["iphoneos", "iphonesimulation"].each {|path| `rm -rf #{@platform.name.to_s}/#{path}` }
-
       if $?.exitstatus != 0
         puts UI::BuildFailedReport.report(command, output)
         Process.exit
       end
+
+      # 4. remove iphone os/simulation paths
+      ["iphoneos", "iphonesimulation", "#{@spec.name}.framework"].each {|path| `rm -rf #{@platform.name.to_s}/#{path}` }
     end
 
     def build_sim_libraries(defines)
@@ -218,8 +212,8 @@ MAP
       end
     end
 
-    def create_framework(platform_name="#{@platform.name.to_s}")
-      @fwk = Framework::Tree.new(@spec.name, platform_name)
+    def create_framework
+      @fwk = Framework::Tree.new(@spec.name, @platform.name.to_s)
       @fwk.make
     end
 

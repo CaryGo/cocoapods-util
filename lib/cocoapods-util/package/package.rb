@@ -95,19 +95,15 @@ module Pod
               config.installation_root  = Pathname.new(Dir.pwd)
               config.sandbox_root       = 'Pods'
     
-              static_sandbox = build_static_sandbox(@dynamic)
+              static_sandbox = build_static_sandbox()
               static_installer = install_pod(platform.name, static_sandbox)
     
-              if @dynamic
-                dynamic_sandbox = build_dynamic_sandbox(static_sandbox, static_installer)
-                install_dynamic_pod(dynamic_sandbox, static_sandbox, static_installer)
-              end
-    
               begin
-                perform_build(platform, static_sandbox, dynamic_sandbox, static_installer)
+                perform_build(platform, static_sandbox, static_installer)
               ensure # in case the build fails; see Builder#xcodebuild.
                 Pathname.new(config.sandbox_root).rmtree
                 FileUtils.rm_f('Podfile.lock')
+                FileUtils.rm_f('build/')
               end
             end
     
@@ -143,13 +139,8 @@ module Pod
               [target_dir, work_dir]
             end
     
-            def perform_build(platform, static_sandbox, dynamic_sandbox, static_installer)
+            def perform_build(platform, static_sandbox, static_installer)
               static_sandbox_root = config.sandbox_root.to_s
-    
-              if @dynamic
-                static_sandbox_root = "#{static_sandbox_root}/#{static_sandbox.root.to_s.split('/').last}"
-                dynamic_sandbox_root = "#{config.sandbox_root}/#{dynamic_sandbox.root.to_s.split('/').last}"
-              end
     
               builder = Pod::Builder.new(
                 platform,
