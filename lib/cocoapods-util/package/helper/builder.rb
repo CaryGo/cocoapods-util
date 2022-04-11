@@ -1,6 +1,6 @@
 module Pod
   class Builder
-    def initialize(platform, static_installer, source_dir, static_sandbox_root, public_headers_root, spec, config, exclude_sim, exclude_archs)
+    def initialize(platform, static_installer, source_dir, static_sandbox_root, public_headers_root, spec, config, exclude_sim, exclude_archs, framework_contains_resources)
       @platform = platform
       @static_installer = static_installer
       @source_dir = source_dir
@@ -10,6 +10,7 @@ module Pod
       @config = config
       @exclude_sim = exclude_sim
       @exclude_archs = exclude_archs
+      @framework_contains_resources = framework_contains_resources
 
       @file_accessors = @static_installer.pod_targets.select { |t| t.pod_name == @spec.name }.flat_map(&:file_accessors)
     end
@@ -50,18 +51,7 @@ module Pod
       end
 
       # 2. copy resources
-      bundles = Dir.glob("#{@static_sandbox_root}/build/#{@config}-iphoneos/#{@spec.name}/*.bundle")
-      resources = expand_paths(@spec.consumer(@platform).resources)
-      if bundles.count > 0 || resources.count > 0
-        resources_path = platform_path + "Resources"
-        resources_path.mkdir unless resources_path.exist?
-        if bundles.count > 0
-          `cp -rp #{@static_sandbox_root}/build/#{@config}-iphoneos/#{@spec.name}/*.bundle #{resources_path} 2>&1`
-        end
-        if resources.count > 0
-          `cp -rp #{resources.join(' ')} #{resources_path}`
-        end
-      end
+      copy_resources
     end
 
     def build_static_framework
@@ -200,6 +190,29 @@ MAP
     end
 
     def copy_resources
+      unless @framework_contains_resources
+        # copy resources
+        platform_path = Pathname.new(@platform.name.to_s)
+        platform_path.mkdir unless platform_path.exist?
+        
+        bundles = Dir.glob("#{@static_sandbox_root}/build/#{@config}-iphoneos/#{@spec.name}/*.bundle")
+        resources = expand_paths(@spec.consumer(@platform).resources)
+        if bundles.count > 0 || resources.count > 0
+          resources_path = platform_path + "Resources"
+          resources_path.mkdir unless resources_path.exist?
+          if bundles.count > 0
+            `cp -rp #{@static_sandbox_root}/build/#{@config}-iphoneos/#{@spec.name}/*.bundle #{resources_path} 2>&1`
+          end
+          if resources.count > 0
+            `cp -rp #{resources.join(' ')} #{resources_path}`
+          end
+        end
+
+        # delete framework resources
+        @fwk.delete_resources if @fwk
+        return
+      end
+
       bundles = Dir.glob("#{@static_sandbox_root}/build/#{@config}-iphoneos/#{@spec.name}/*.bundle")
       `cp -rp #{@static_sandbox_root}/build/#{@config}-iphoneos/#{@spec.name}/*.bundle #{@fwk.resources_path} 2>&1`
       resources = expand_paths(@spec.consumer(@platform).resources)

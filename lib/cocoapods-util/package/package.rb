@@ -19,6 +19,7 @@ module Pod
             def self.options
               [
                 ['--force',     'Overwrite existing files.'],
+                ['--library',   'Generate static library.'],
                 ['--framework',   'Generate static framework.'],
                 ['--xcframework',   'Generate static xcframework.'],
                 ['--local',     'Use local state rather than published versions.'],
@@ -29,18 +30,22 @@ module Pod
                 ['--exclude-sim', 'Exclude iphonesimulator.'],
                 ['--use-modular-headers', 'use modular headers.'],
                 ['--exclude-archs', '--exclude-archs=armv7s'],
-                ['--dependency-config', 'Podfile json array. [["JXAdvert", {:git=>"xxx", :branch=>"xxx"}]]']
+                ['--dependency-config', 'Podfile json array. [["JXAdvert", {:git=>"xxx", :branch=>"xxx"}]]'],
+                ['--contains-resources', 'framework contains resources'],
               ]
             end
     
             def initialize(argv)
               @framework = argv.flag?('framework')
               @xcframework = argv.flag?('xcframework')
+              @library = argv.flag?('library')
               @local = argv.flag?('local', false)
               @package_type = if @xcframework
                                 :static_xcframework
                               elsif @framework
                                 :static_framework
+                              elsif @library
+                                :static_library
                               else
                                 :static_library
                               end
@@ -55,6 +60,7 @@ module Pod
               @subspecs = subspecs.split(',') unless subspecs.nil?
     
               @exclude_archs = argv.option('exclude-archs', '')
+              @framework_contains_resources = argv.flag?('contains-resources', false)
     
               dependency_config = argv.option('dependency-config', '[]')
               @dependency_config = JSON.parse(dependency_config)
@@ -73,6 +79,7 @@ module Pod
               super
               help! 'A podspec name or path is required.' unless @spec
               help! '--local option can only be used when a local `.podspec` path is given.' if @local && !@is_spec_from_path
+              help! 'library can\'t set contains-resources flag.' if !(@framework || @xcframework) && @framework_contains_resources
             end
     
             def run
@@ -103,7 +110,8 @@ module Pod
               ensure # in case the build fails; see Builder#xcodebuild.
                 Pathname.new(config.sandbox_root).rmtree
                 FileUtils.rm_f('Podfile.lock')
-                FileUtils.rm_f('build/')
+                # clean build
+                FileUtils.rm_rf('build')
               end
             end
     
@@ -151,7 +159,8 @@ module Pod
                 @spec,
                 @config,
                 @exclude_sim,
-                @exclude_archs
+                @exclude_archs,
+                @framework_contains_resources
               )
     
               builder.build(@package_type)
