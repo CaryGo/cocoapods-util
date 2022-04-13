@@ -4,37 +4,41 @@ module Pod
     class Command
       class Util < Command
           class XCFramework < Util
-              self.summary = '生成XCFramework'
+              self.summary = '生成XCFramework，传入参数为framework路径'
               self.command = 'xcfwk'
               self.arguments = [
-                CLAide::Argument.new('NAME', true),
+                CLAide::Argument.new('FRAMEWORK_PATH', true),
               ]
       
               def self.options
                 [
-                  ['--force',   '强制生成新的xcframework.']
+                  ['--force',   'Overwrite existing files.']
                 ]
               end
       
               def initialize(argv)
-                @name = argv.shift_argument
+                @file_path = argv.shift_argument
                 @force = argv.flag?('force')
                 super
               end
       
               def validate!
                 super
-                help! '必须传入framework路径或名称.' unless @name
+                help! '必须传入framework路径或名称.' unless @file_path
               end
       
               def run
-                if @name.nil? || (File.exist? @name) == false
+                if @file_path.nil?
                   help! 'Unable to find a framework with path or name.'
                   return
                 end
+                if (File.exist? @file_path) == false || @file_path.split('.').last != 'framework'
+                  help! "路径不存在或传入的路径不是framework"
+                  return
+                end
 
-                source_dir, basename = File.split(@name)
-                framework_name = basename.split('.').first
+                source_dir, basename = File.split(@file_path)
+                framework_name = File.basename(basename, '.framework')
                 Dir.chdir(source_dir)
 
                 target_dir = "#{source_dir}/#{framework_name}.xcframework"

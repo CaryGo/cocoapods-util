@@ -9,7 +9,21 @@ module Pod
             UI.puts("Generate static xcframework #{@name}")
             
             framework_path = "#{@source_dir}/#{@name}.framework"
-            lib_path = "#{framework_path}/Versions/A/#{@name}"
+            # 可执行文件名称
+            lib_file = "#{@name}"
+            # 可执行文件完整路径
+            lib_path = "#{framework_path}/#{lib_file}"
+            # 可执行文件不存在，退出
+            unless File.exist? lib_path
+                UI.puts("没有找到可执行文件，请检查输入的framework")
+                return
+            end
+            # 如果可执行文件为软链接类型，获取realpath
+            if File.ftype(lib_path) == 'link'
+                lib_file = File.readlink(lib_path) 
+                lib_path = "#{framework_path}/#{lib_file}"
+            end
+            # 获取可执行文件的支持架构
             archs = `lipo -archs #{lib_path}`.split
             os_archs = archs & ['arm64', 'armv7', 'armv7s']
             sim_archs = archs & ['i386', 'x86_64']
@@ -27,7 +41,7 @@ module Pod
         
                 fwk_path = "#{path}/#{@name}.framework"
                 frameworks_path += ["#{fwk_path}"]
-                `lipo #{extract_archs.join(' ')} "#{lib_path}" -o "#{fwk_path}/Versions/A/#{@name}"`
+                `lipo #{extract_archs.join(' ')} "#{fwk_path}/#{lib_file}" -o "#{fwk_path}/#{lib_file}"`
             end
             # 2. copy iphonesimulation framework
             if sim_archs.count > 0
@@ -41,16 +55,13 @@ module Pod
 
                 fwk_path = "#{path}/#{@name}.framework"
                 frameworks_path += ["#{fwk_path}"]
-                `lipo #{extract_archs.join(' ')} "#{lib_path}" -o "#{fwk_path}/Versions/A/#{@name}"`
+                `lipo #{extract_archs.join(' ')} "#{fwk_path}/#{lib_file}" -o "#{fwk_path}/#{lib_file}"`
             end
 
             # 3. build xcframework
             command = "xcodebuild -create-xcframework -framework #{frameworks_path.join(' -framework ')} -output #{@source_dir}/#{@name}.xcframework 2>&1"
             output = `#{command}`.lines.to_a
-            if $?.exitstatus != 0
-                puts UI::BuildFailedReport.report(command, output)
-                Process.exit
-            end
+            result = $?
     
             # 4. remove iphone os/simulation paths
             ['iphoneos', 'iphonesimulation'].each do |path|
@@ -58,6 +69,12 @@ module Pod
                 if File.exist? file_path
                     Pathname.new(file_path).rmtree
                 end
+            end
+
+            # show error
+            if result.exitstatus != 0
+                puts UI::BuildFailedReport.report(command, output)
+                Process.exit
             end
 
             # 5. generate success

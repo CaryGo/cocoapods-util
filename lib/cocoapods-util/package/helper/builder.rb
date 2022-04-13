@@ -1,3 +1,5 @@
+require 'cocoapods-util/xcframework/xcramework_build.rb'
+
 module Pod
   class Builder
     def initialize(platform, static_installer, source_dir, static_sandbox_root, public_headers_root, spec, config, exclude_sim, exclude_archs, framework_contains_resources)
@@ -75,53 +77,12 @@ module Pod
     def build_static_xcframework
       build_static_framework
 
-      UI.puts("Generate static xcframework #{@spec} with configuration #{@config}")
-
-      output = @fwk.versions_path + Pathname.new(@spec.name)
-      archs = `lipo -archs #{output}`.split
-      os_archs = archs & ['arm64', 'armv7', 'armv7s']
-      sim_archs = archs & ['i386', 'x86_64']
-
-      frameworks_path = Array.new()
-      # 1. copy iphoneos framework
-      if os_archs.count > 0
-        path = Pathname.new("#{@platform.name.to_s}/iphoneos")
-        path.mkdir unless path.exist?
-        `cp -a #{@fwk.fwk_path} #{path}/`
-        extract_archs = os_archs.map do |arch|
-          extract_arch = "-extract #{arch}"
-          extract_arch
-        end
-
-        fwk_path = platform_path = Pathname.new("#{path}/#{@spec.name}.framework")
-        frameworks_path += ["#{fwk_path}"]
-        `lipo #{extract_archs.join(' ')} "#{output}" -o "#{fwk_path}/Versions/A/#{@spec.name}"`
-      end
-      # 2. copy iphonesimulation framework
-      if sim_archs.count > 0
-        path = Pathname.new("#{@platform.name.to_s}/iphonesimulation")
-        path.mkdir unless path.exist?
-        `cp -a #{@fwk.fwk_path} #{path}/`
-        extract_archs = sim_archs.map do |arch|
-          extract_arch = "-extract #{arch}"
-          extract_arch
-        end
-
-        fwk_path = platform_path = Pathname.new("#{path}/#{@spec.name}.framework")
-        frameworks_path += ["#{fwk_path}"]
-        `lipo #{extract_archs.join(' ')} "#{output}" -o "#{fwk_path}/Versions/A/#{@spec.name}"`
-      end
-
-      # 3. build xcframework
-      command = "xcodebuild -create-xcframework -framework #{frameworks_path.join(' -framework ')} -output #{@platform.name.to_s}/#{@spec.name}.xcframework 2>&1"
-      output = `#{command}`.lines.to_a
-      if $?.exitstatus != 0
-        puts UI::BuildFailedReport.report(command, output)
-        Process.exit
-      end
-
-      # 4. remove iphone os/simulation paths
-      ["iphoneos", "iphonesimulation", "#{@spec.name}.framework"].each {|path| `rm -rf #{@platform.name.to_s}/#{path}` }
+      # gemerate xcframework
+      xcbuilder = XCFrameworkBuilder.new(
+        @spec.name,
+        @platform.name.to_s
+      )
+      xcbuilder.build_static_xcframework
     end
 
     def build_sim_libraries(defines)
