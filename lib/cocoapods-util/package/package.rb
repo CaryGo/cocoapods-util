@@ -9,7 +9,8 @@ module Pod
   class Command
     class Util < Command
         class Package < Util
-            self.summary = 'Package a podspec into a static library.'
+            self.summary = '通过podspec编译静态库（library/framework/xcframework）。'
+            self.description = "本插件属于在cocoapods-packager的基础上做的修改，仅支持编译静态库。另外支持use_modular_headers!、排除模拟器、排除特定架构、编译xcframework等。"
             self.arguments = [
               CLAide::Argument.new('NAME', true),
               CLAide::Argument.new('SOURCE', false)
@@ -26,11 +27,11 @@ module Pod
                 ['--subspecs', 'Only include the given subspecs'],
                 ['--spec-sources=private,https://github.com/CocoaPods/Specs.git', 'The sources to pull dependent ' \
                   'pods from (defaults to https://github.com/CocoaPods/Specs.git)'],
-                ['--exclude-sim', 'Exclude iphonesimulator.'],
-                ['--use-modular-headers', 'use modular headers.'],
-                ['--exclude-archs', '--exclude-archs=armv7s'],
-                ['--dependency-config', 'Podfile json array. [["JXAdvert", {:git=>"xxx", :branch=>"xxx"}]]'],
-                ['--contains-resources', 'framework contains resources'],
+                ['--exclude-sim', '排除模拟器架构，仅编译真机对应的架构。'],
+                ['--use-modular-headers', '开启use_modular_headers!'],
+                ['--exclude-archs', '排除特定的架构，如`--exclude-archs=armv7s`'],
+                ['--dependency-config', '依赖的pod文件配置，为一个json数组，可以配置分支、tag、source源等。[["PodA", {"git":"xxx", "branch":"xxx"}],["PodB", {"source":"xxx"}]]'],
+                ['--contains-resources', '生成的framework中是否包含bundle文件，默认不把bundle文件放到framework中。'],
               ]
             end
     
@@ -78,7 +79,7 @@ module Pod
               super
               help! 'A podspec name or path is required.' unless @spec
               help! '--local option can only be used when a local `.podspec` path is given.' if @local && !@is_spec_from_path
-              help! 'library can\'t set contains-resources flag.' if !(@framework || @xcframework) && @framework_contains_resources
+              help! '编译静态库.a不允许设置包含resources' if !(@framework || @xcframework) && @framework_contains_resources
             end
     
             def run
@@ -116,7 +117,10 @@ module Pod
     
             def build_package
               @spec.available_platforms.each do |platform|
-                build_in_sandbox(platform)
+                # 暂时仅支持ios框架的编译
+                if platform.name.to_s == 'ios'
+                  build_in_sandbox(platform)
+                end
               end
             end
     
@@ -137,8 +141,8 @@ module Pod
               target_dir = create_target_directory
               return if target_dir.nil?
     
-              # work_dir = Dir.tmpdir + '/cocoapods-' + Array.new(8) { rand(36).to_s(36) }.join
-              work_dir = "#{@source_dir}" + '/cocoapods-' + Array.new(8) { rand(36).to_s(36) }.join
+              work_dir = Dir.tmpdir + '/cocoapods-' + Array.new(8) { rand(36).to_s(36) }.join
+              # work_dir = "#{@source_dir}" + '/cocoapods-' + Array.new(8) { rand(36).to_s(36) }.join
               puts "#{work_dir}"
               Pathname.new(work_dir).mkdir
               Dir.chdir(work_dir)
