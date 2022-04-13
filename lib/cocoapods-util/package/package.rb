@@ -1,5 +1,4 @@
 require 'cocoapods-util/package/helper/pod_utils'
-require 'cocoapods-util/package/helper/user_interface/build_failed_report'
 require 'cocoapods-util/package/helper/builder'
 require 'cocoapods-util/package/helper/framework'
 

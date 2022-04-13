@@ -1,4 +1,5 @@
 require 'cocoapods-util/package/package'
+require 'cocoapods-util/xcframework/xcframework'
 
 module Pod
   class Command
