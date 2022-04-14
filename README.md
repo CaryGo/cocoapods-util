@@ -1,6 +1,6 @@
 # cocoapods-util
 
-A description of cocoapods-util.
+cocoapods-util是一个pod插件集合，包括package，生成xcframework等功能.
 
 ## Installation
 
@@ -8,4 +8,8 @@ A description of cocoapods-util.
 
 ## Usage
 
-    $ pod spec util POD_NAME
+    $ pod util --help
+
+    $ pod util package --help
+
+    $ pod util xcframework --help
