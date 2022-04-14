@@ -28,13 +28,13 @@ module Pod
               end
       
               def run
-                if (File.exist? @file_path) == false || @file_path.split('.').last != 'framework'
+                if (File.exist? @file_path) == false || !(@file_path =~ /\.framework$/)
                   help! "路径不存在或传入的路径不是framework文件"
                   return
                 end
 
-                source_dir, basename = File.split(@file_path)
-                framework_name = File.basename(basename, '.framework')
+                source_dir, framework_name = File.split(@file_path)
+                framework_name = framework_name.gsub!(/\.framework$/, "")
 
                 target_dir = "#{source_dir}/#{framework_name}.xcframework"
                 if File.exist? target_dir
