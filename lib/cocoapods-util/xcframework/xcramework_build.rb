@@ -6,7 +6,7 @@ module Pod
         end
 
         def build_static_xcframework
-            UI.puts("Generate static xcframework #{@name}")
+            UI.puts("Generate #{@name}.xcframework")
             
             framework_path = "#{@source_dir}/#{@name}.framework"
             # 可执行文件名称
@@ -78,7 +78,7 @@ module Pod
             end
 
             # 5. generate success
-            UI.puts("Generate xcframework #{@name} succees")
+            UI.puts("Generate #{@name}.xcframework succees")
         end
     end
 end

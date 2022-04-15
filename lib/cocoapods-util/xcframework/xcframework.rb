@@ -28,13 +28,15 @@ module Pod
               end
       
               def run
+                # 获取真实路径，~ 为进程所有者的主目录
+                @file_path = File.expand_path(@file_path)
                 if (File.exist? @file_path) == false || !(@file_path =~ /\.framework$/)
                   help! "路径不存在或传入的路径不是framework文件"
                   return
                 end
 
-                source_dir, framework_name = File.split(@file_path)
-                framework_name = framework_name.gsub!(/\.framework$/, "")
+                source_dir = File.dirname(@file_path)
+                framework_name = File.basename(@file_path, ".framework")
 
                 target_dir = "#{source_dir}/#{framework_name}.xcframework"
                 if File.exist? target_dir
