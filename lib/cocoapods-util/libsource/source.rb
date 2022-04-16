@@ -14,9 +14,10 @@ module Pod
                 [
                   ['--link', '链接源码'],
                   ['--unlink', '删除源码链接'],
-                  ['--checklink', '检查源码链接'],
+                  ['--checklinked', '检查源码链接'],
                   ['--force',   '覆盖已经添加的软链接'],
-                  ['--source-path', '需要链接的源码的路径']
+                  ['--source-path', '需要链接的源码的路径'],
+                  ['--compile-path', '特殊情况获取的编译路径和真实源码编译的路径可能不一致，可自定义设置编译路径']
                 ]
               end
       
@@ -26,8 +27,8 @@ module Pod
                                 :link 
                              elsif argv.flag?('unlink')
                                 :unlink
-                             elsif argv.flag?('checklink')
-                                :checklink
+                             elsif argv.flag?('checklinked')
+                                :checklinked
                              else
                                 :link
                              end
@@ -35,6 +36,7 @@ module Pod
                 @file_path = argv.shift_argument
                 @force = argv.flag?('force')
                 @source_path = argv.option('source-path', nil)
+                @compile_path = argv.option('compile-path', nil)
                 super
               end
       
@@ -58,11 +60,12 @@ module Pod
                   file_name,
                   file_type,
                   source_dir,
-                  @force,
-                  @source_path
+                  @link_type,
+                  @force
                 )
                 linker.allow_ask_source_path = true
-                linker.link_type = @link_type
+                linker.source_path = @source_path
+                linker.compile_path = @compile_path
                 linker.execute
               end
           end

@@ -1,13 +1,12 @@
 class SourceLinker
 include Pod
-    attr_accessor :allow_ask_source_path, :link_type
+    attr_accessor :allow_ask_source_path, :source_path, :compile_path
 
-    def initialize(file_name, file_type, source_dir, force_link, source_path)
+    def initialize(file_name, file_type, source_dir, link_type, force_link)
         # 允许询问源码路径，默认为false
         @allow_ask_source_path = false
-        @link_type = :link
+        @link_type = link_type
 
-        @source_path = source_path
         @file_name = file_name.gsub(/^lib/, '')
         @file_type = file_type
         @source_dir = source_dir
@@ -15,7 +14,11 @@ include Pod
     end
         
     def execute
-        compile_dir_path = check_compile(get_lib_path)
+        compile_dir_path = if @compile_path
+                                @compile_path
+                            else
+                                check_compile(get_lib_path)
+                            end
         if compile_dir_path.nil? || compile_dir_path.empty?
             UI.puts "没有获取到可执行文件的编译路径，链接结束。"
             return
@@ -23,9 +26,9 @@ include Pod
 
         case @link_type
         when :link
-            add_link(comp_dir_path)
+            add_link(compile_dir_path)
         when :unlink
-            remove_link(comp_dir_path)
+            remove_link(compile_dir_path)
         else
             linked_path = get_linked_path(compile_dir_path)
             check_linked(get_lib_path, linked_path)
@@ -35,7 +38,7 @@ include Pod
     private
 
     def remove_link(compile_dir_path)
-        linked_path = get_linked_path(comp_dir_path)
+        linked_path = get_linked_path(compile_dir_path)
         if File.exist? linked_path
             if File.symlink?(linked_path)
                 File.unlink(linked_path)
@@ -104,7 +107,7 @@ include Pod
             UI.puts "#{file}文件不存在，请检查源码的版本或存储位置"
             return
         end
-        UI.puts "链接成功"
+        UI.puts "链接成功，链接路径#{linked_path}"
     end
 
     def get_stdin(message)
@@ -115,7 +118,12 @@ include Pod
     end
 
     def get_linked_path(compile_dir_path)
-        linked_path = "#{compile_dir_path}/#{@file_name}"
+        if @source_path.nil? || @source_path.empty?
+            linked_path = "#{compile_dir_path}/#{@file_name}"
+        else
+            basename = File.basename(@source_path)
+            linked_path = "#{compile_dir_path}/#{basename}" 
+        end
         linked_path
     end
 
