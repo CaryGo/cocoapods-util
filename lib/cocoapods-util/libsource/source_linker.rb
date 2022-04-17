@@ -17,7 +17,7 @@ include Pod
         compile_dir_path = if @compile_path
                                 @compile_path
                             else
-                                check_compile(get_lib_path)
+                                check_compile(get_libfile_path)
                             end
         if compile_dir_path.nil? || compile_dir_path.empty?
             UI.puts "没有获取到可执行文件的编译路径，链接结束。"
@@ -31,8 +31,12 @@ include Pod
             remove_link(compile_dir_path)
         else
             linked_path = get_linked_path(compile_dir_path)
-            check_linked(get_lib_path, linked_path)
+            check_linked(get_libfile_path, linked_path)
         end
+    end
+
+    def islinked(compile_dir_path)
+
     end
 
     private
@@ -96,15 +100,17 @@ include Pod
 
         # 链接
         File.symlink(@source_path , linked_path)
-        check_linked(get_lib_path, linked_path)
+        check_linked(get_libfile_path, linked_path)
     end
 
     def check_linked(lib_file, linked_path)
         file = `dwarfdump "#{lib_file}" | grep -E "DW_AT_decl_file.*\.(m|mm|c)" | head -1 | cut -d \\" -f2`.chomp!
-        basename = File.basename(file)
-        files = Dir.glob("#{linked_path}/**/#{basename}")
+        if file.nil? || file.empty?
+            UI.puts "二进制中未搜索到#{@file_name}相关文件，请自行检查。"
+            return
+        end
         unless File.exist?(file)
-            UI.puts "#{file}文件不存在，请检查源码的版本或存储位置"
+            UI.puts "#{file}文件不存在，请检查源码的版本或存储位置。"
             return
         end
         UI.puts "链接成功，链接路径#{linked_path}"
@@ -127,7 +133,7 @@ include Pod
         linked_path
     end
 
-    def get_lib_path
+    def get_libfile_path
         if @lib_path
             @lib_path
         else
@@ -147,8 +153,8 @@ include Pod
         end
     end
 
-    def check_realpath(lib_file, dir_path)
-        lib_path = "#{dir_path}/#{lib_file}"
+    def check_realpath(lib_filename, dir_path)
+        lib_path = "#{dir_path}/#{lib_filename}"
         if File.exist? lib_path
             # 如果可执行文件为软链接类型，获取realpath
             if File.ftype(lib_path) == 'link'

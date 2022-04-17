@@ -4,10 +4,10 @@ module Pod
     class Command
       class Util < Command
           class Source < Util
-              self.summary = '根据传入Framework添加源码软链接，需要传入或输入源码的路径'
+              self.summary = '根据传入library、framework或xcframework，添加源码软链接，需要传入或输入源码的路径'
               self.command = 'source'
               self.arguments = [
-                CLAide::Argument.new('FRAMEWORK_PATH', true),
+                CLAide::Argument.new('NAME', true),
               ]
       
               def self.options
@@ -49,7 +49,7 @@ module Pod
                 # 获取真实路径，~ 为进程所有者的主目录
                 @file_path = File.expand_path(@file_path)
                 if (File.exist? @file_path) == false || !(@file_path =~ /\.(a|framework|xcframework)$/)
-                  help! "路径不存在或传入的路径不是framework文件"
+                  help! "路径不存在或传入的路径不是.a、.framework、.xcframework文件"
                   return
                 end
 
