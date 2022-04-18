@@ -1,3 +1,5 @@
+require 'fileutils'
+
 class SourceLinker
 include Pod
     attr_accessor :allow_ask_source_path, :source_path, :compile_path
@@ -86,14 +88,13 @@ include Pod
             end
         end
 
-        compile_dir = Pathname.new(compile_dir_path)
-        unless compile_dir.exist?
+        unless File.exist? compile_dir_path
             begin
-                compile_dir.mkdir
+                FileUtils.mkdir_p(compile_dir_path)
             rescue Exception => e 
                 # puts e.backtrace.inspect 
-                UI.puts "创建可执行文件的编译路径失败，可能是因为权限问题，请检查`#{compile_dir}`\n\n错误信息：#{e.message}".red
-                UI.puts "您可以使用命令创建目录：`sudo mkdir -p #{compile_dir}`"
+                UI.puts "创建可执行文件的编译路径失败，可能是因为权限问题，请检查`#{compile_dir_path}`\n\n错误信息：#{e.message}".red
+                UI.puts "您可以使用命令创建目录：`sudo mkdir -p #{compile_dir_path}`"
                 return
             end
         end
@@ -169,6 +170,9 @@ include Pod
 
     def check_compile(lib_path)
         compile_dir_path = `dwarfdump "#{lib_path}" | grep "AT_comp_dir" | head -1 | cut -d \\" -f2`.chomp!
+        UI.puts "#{compile_dir_path}"
+        # filepath = `dwarfdump "#{lib_file}" | grep -E "DW_AT_decl_file.*\.(m|mm|c)" | head -1 | cut -d \\" -f2`.chomp!
+        # UI.puts "#{file_path}"
         compile_dir_path
     end
 end
