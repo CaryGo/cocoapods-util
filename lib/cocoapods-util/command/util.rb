@@ -5,9 +5,9 @@ require 'cocoapods-util/libsource/source'
 module Pod
   class Command
     class Util < Command
-      self.summary = 'pod插件工具'
+      self.summary = '一个CocoaPods插件，包括package、framework生成xcframework、二进制link源码等功能。使用`pod util --help`查看支持功能'
       self.description = <<-DESC
-      pod插件入口，使用`pod util --help`查看支持功能。
+      一个常用插件功能的集合，目前支持打包、生成xcframework、二进制源码链接，后续将支持生成编译产物加快编译速度等功能。
       DESC
       self.command == 'util'
       self.abstract_command = true
