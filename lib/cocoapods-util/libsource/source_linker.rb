@@ -31,6 +31,8 @@ include Pod
             add_link(compile_dir_path)
         when :unlink
             remove_link(compile_dir_path)
+        when :checkcompile
+            user_check_compile
         else
             linked_path = get_linked_path(compile_dir_path)
             check_linked(get_libfile_path, linked_path)
@@ -170,9 +172,13 @@ include Pod
 
     def check_compile(lib_path)
         compile_dir_path = `dwarfdump "#{lib_path}" | grep "AT_comp_dir" | head -1 | cut -d \\" -f2`.chomp!
-        UI.puts "#{compile_dir_path}"
-        # filepath = `dwarfdump "#{lib_file}" | grep -E "DW_AT_decl_file.*\.(m|mm|c)" | head -1 | cut -d \\" -f2`.chomp!
-        # UI.puts "#{file_path}"
         compile_dir_path
+    end
+
+    def user_check_compile
+        compile_dir_path = `dwarfdump "#{get_libfile_path}" | grep "AT_comp_dir" | head -1 | cut -d \\" -f2`.chomp!
+        UI.puts "二进制文件的编译路径：#{compile_dir_path}"
+        file_path = `dwarfdump "#{get_libfile_path}" | grep -E "DW_AT_decl_file.*\.(m|mm|c)" | head -1 | cut -d \\" -f2`.chomp!
+        UI.puts "二进制文件中某个文件编译时的真实路径：#{file_path}"
     end
 end

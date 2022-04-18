@@ -5,6 +5,9 @@ module Pod
       class Util < Command
           class Source < Util
               self.summary = '根据传入library、framework或xcframework，添加源码软链接，需要传入或输入源码的路径'
+              self.description = <<-DESC
+                需要注意参数中的`link、unlink、checklinked和checkcompile是互斥的，只需要传入一个参数。`
+              DESC
               self.command = 'source'
               self.arguments = [
                 CLAide::Argument.new('NAME', true),
@@ -15,7 +18,9 @@ module Pod
                   ['--link', '链接源码'],
                   ['--unlink', '删除源码链接'],
                   ['--checklinked', '检查源码链接'],
-                  ['--force',   '覆盖已经添加的软链接'],
+                  ['--checkcompile', '输出二进制文件的编译信息，编译的工程路径，编译的源码路径等'],
+                  
+                  ['--force',   'link时覆盖已经添加的软链接'],
                   ['--source-path', '需要链接的源码的路径'],
                   ['--compile-path', '特殊情况获取的编译路径和真实源码编译的路径可能不一致，可自定义设置编译路径']
                 ]
@@ -29,6 +34,8 @@ module Pod
                                 :unlink
                              elsif argv.flag?('checklinked')
                                 :checklinked
+                             elsif argv.flag?('checkcompile')
+                                :checkcompile
                              else
                                 :link
                              end
