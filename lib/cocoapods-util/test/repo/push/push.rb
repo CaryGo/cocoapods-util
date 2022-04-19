@@ -6,7 +6,7 @@ module Pod
       class Repo < Util
         class Push < Repo
           def initialize(argv)
-            @spec_validate = argv.flag?('spec-validate', true)
+            @skip_validate = argv.flag?('skip-validate', false)
             super
             @argvs = argv.remainder!
           end
@@ -17,7 +17,7 @@ module Pod
           end
 
           def run
-            @target.spec_validate = @spec_validate
+            @target.skip_validate = @skip_validate
             @target.run
           end
         end

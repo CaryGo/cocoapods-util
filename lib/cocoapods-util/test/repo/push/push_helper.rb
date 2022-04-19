@@ -2,11 +2,11 @@ module Pod
     class Command
       class Repo < Command
         class Push < Repo
-            attr_accessor :spec_validate
+            attr_accessor :skip_validate
 
             def self.options
               [
-                ['--no-spec-validate', '不验证推送的podspec文件，默认验证'],
+                ['--skip-validate', '跳过验证，不验证推送的podspec文件，默认为验证'],
                 ['--allow-warnings', 'Allows pushing even if there are warnings'],
                 ['--use-libraries', 'Linter uses static libraries to install the spec'],
                 ['--use-modular-headers', 'Lint uses modular headers during installation'],
@@ -29,13 +29,13 @@ module Pod
             alias old_validate_podspec_files validate_podspec_files
             def validate_podspec_files
                 UI.puts "validate_podspec_files"
-                old_validate_podspec_files if @spec_validate
+                old_validate_podspec_files unless @skip_validate
             end
 
             alias old_check_repo_status check_repo_status
             def check_repo_status
                 UI.puts "check_repo_status"
-                old_check_repo_status if @spec_validate
+                old_check_repo_status unless @skip_validate
             end
         end
       end
