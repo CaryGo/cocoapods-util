@@ -1,4 +1,4 @@
-require 'cocoapods-util/test/repo/push/push_helper.rb'
+require 'cocoapods-util/test/repo/push_helper.rb'
 
 module Pod
   class Command
