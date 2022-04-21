@@ -1,38 +1,33 @@
+class Module
+    def strong_alias(to, from)
+      # https://tieba.baidu.com/p/5535445605?red_tag=0735709674  贴吧大神给出的方案
+      # 类方法可以看做singleton class（单例类）的实例方法，下面两个方法都可以，上面这个方式也适用于早起的ruby版本
+      (class << self;self;end).send(:alias_method, to, from)
+      # self.singleton_class.send(:alias_method, to, from)
+    end
+end
+
 module Pod
     class Command
       class Repo < Command
         class Push < Repo
             attr_accessor :skip_validate
 
+            self.strong_alias(:old_options, :options)
             def self.options
               [
-                ['--skip-validate', '跳过验证，不验证推送的podspec文件，默认为验证'],
-                ['--allow-warnings', 'Allows pushing even if there are warnings'],
-                ['--use-libraries', 'Linter uses static libraries to install the spec'],
-                ['--use-modular-headers', 'Lint uses modular headers during installation'],
-                ["--sources=#{Pod::TrunkSource::TRUNK_REPO_URL}", 'The sources from which to pull dependent pods ' \
-                 '(defaults to all available repos). Multiple sources must be comma-delimited'],
-                ['--local-only', 'Does not perform the step of pushing REPO to its remote'],
-                ['--no-private', 'Lint includes checks that apply only to public repos'],
-                ['--skip-import-validation', 'Lint skips validating that the pod can be imported'],
-                ['--skip-tests', 'Lint skips building and running tests during validation'],
-                ['--commit-message="Fix bug in pod"', 'Add custom commit message. Opens default editor if no commit ' \
-                  'message is specified'],
-                ['--use-json', 'Convert the podspec to JSON before pushing it to the repo'],
-                ['--swift-version=VERSION', 'The `SWIFT_VERSION` that should be used when linting the spec. ' \
-                 'This takes precedence over the Swift versions specified by the spec or a `.swift-version` file'],
-                ['--no-overwrite', 'Disallow pushing that would overwrite an existing spec'],
-                ['--update-sources', 'Make sure sources are up-to-date before a push'],
-              ].concat(super)
+                ['--skip-validate', '跳过验证，不验证推送的podspec文件，默认为验证']
+              ].concat(self.old_options)
             end
 
-            alias old_validate_podspec_files validate_podspec_files
-            def validate_podspec_files
+            # 调用原方法的两种方式
+            old_validate_podspec_files = instance_method(:validate_podspec_files)
+            define_method(:validate_podspec_files) do
                 UI.puts "validate_podspec_files"
-                old_validate_podspec_files unless @skip_validate
+                old_validate_podspec_files.bind(self).() unless @skip_validate
             end
 
-            alias old_check_repo_status check_repo_status
+            alias :old_check_repo_status :check_repo_status
             def check_repo_status
                 UI.puts "check_repo_status"
                 old_check_repo_status unless @skip_validate

@@ -1,5 +1,3 @@
-require 'cocoapods-util/test/repo/push_helper.rb'
-
 module Pod
   class Command
     class Util < Command
@@ -12,6 +10,8 @@ module Pod
           end
 
           def validate!
+            # 用到的时候再加载
+            require 'cocoapods-util/test/repo/push_helper'
             @target = Pod::Command::Repo::Push.new(CLAide::ARGV.new(@argvs))
             @target.validate!
           end
