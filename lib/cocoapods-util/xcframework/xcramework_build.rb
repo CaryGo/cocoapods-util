@@ -26,8 +26,18 @@ module Pod
             end
             # 获取可执行文件的支持架构
             archs = `lipo -archs #{lib_path}`.split
-            os_archs = archs & ['arm64', 'armv7', 'armv7s']
-            sim_archs = archs & ['i386', 'x86_64']
+            os_archs = []
+            sim_archs = []
+            frameworks_path = Array.new()
+            if archs.empty?
+                UI.puts "framework文件中没有检查到任何编译架构，请使用`lipo -info`或`lipo -archs`检查文件支持的架构。"
+                return
+            elsif archs.count == 1
+                frameworks_path += [framework_path]
+            else
+                os_archs = archs & ['arm64', 'armv7', 'armv7s']
+                sim_archs = archs & ['i386', 'x86_64']
+            end
 
             # check_swiftmodule
             swiftmodule_path = Dir.glob("#{framework_path}/Modules/*.swiftmodule").first
@@ -45,7 +55,6 @@ module Pod
             # 1. remove iphone os/simulator paths
             clean_intermediate_path
 
-            frameworks_path = Array.new()
             # 2. copy iphoneos framework
             if os_archs.count > 0
                 path = Pathname.new("#{@source_dir}/#{iphoneos_target_path}")
