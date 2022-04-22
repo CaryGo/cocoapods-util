@@ -80,9 +80,12 @@ module Pod
       # gemerate xcframework
       xcbuilder = XCFrameworkBuilder.new(
         @spec.name,
-        @platform.name.to_s
+        @platform.name.to_s,
+        true
       )
       xcbuilder.build_static_xcframework
+      # delete framework
+      FileUtils.rm_rf("#{@platform.name.to_s}/#{@spec.name}.framework")
     end
 
     def build_sim_libraries(defines)
@@ -122,21 +125,56 @@ module Pod
       Dir.glob("#{headers_source_root}/**/*.h").
         each { |h| `ditto #{h} #{@fwk.headers_path}/#{h.sub(headers_source_root, '')}` }
 
+      # check swift headers
+      swift_headers = Dir.glob("#{@static_sandbox_root}/build/#{@config}-iphoneos/#{@spec.name}/**/*-{Swift,umbrella}.h")
+      swift_headers.each { |h| 
+        h_path = h.gsub(/\s/, "\\ ")
+        `cp -rp #{h_path} #{@fwk.headers_path}/` 
+      }
+
+      # check swiftmodule files
+      swiftmodule_path = "#{@static_sandbox_root}/build/#{@config}-iphoneos/#{@spec.name}/#{@spec.name}.swiftmodule"
+      if File.exist? swiftmodule_path
+        @fwk.module_map_path.mkpath unless @fwk.module_map_path.exist?
+        `cp -rp #{swiftmodule_path.to_s} #{@fwk.module_map_path}/`
+      end
+
+      # umbrella header name
+      header_name = "#{@spec.name}"
+      if File.exist? "#{@fwk.headers_path}/#{@spec.name}-umbrella.h"
+        header_name = "#{@spec.name}-umbrella"
+      end
+
       # If custom 'module_map' is specified add it to the framework distribution
       # otherwise check if a header exists that is equal to 'spec.name', if so
       # create a default 'module_map' one using it.
       if !@spec.module_map.nil?
         module_map_file = @file_accessors.flat_map(&:module_map).first
         module_map = File.read(module_map_file) if Pathname(module_map_file).exist?
-      elsif File.exist?("#{@public_headers_root}/#{@spec.name}/#{@spec.name}.h")
-        module_map = <<MAP
+      elsif File.exist?("#{@fwk.headers_path}/#{header_name}.h")
+        if swift_headers.count > 0
+          module_map = <<MAP
 framework module #{@spec.name} {
-  umbrella header "#{@spec.name}.h"
+  umbrella header "#{header_name}.h"
+
+  export *
+  module * { export * }
+}
+module #{@spec.name}.Swift {
+  header "#{@spec.name}-Swift.h"
+  requires objc
+}
+MAP
+        else
+            module_map = <<MAP
+framework module #{@spec.name} {
+  umbrella header "#{header_name}.h"
 
   export *
   module * { export * }
 }
 MAP
+        end
       end
 
       unless module_map.nil?

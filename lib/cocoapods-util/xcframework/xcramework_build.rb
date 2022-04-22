@@ -1,8 +1,9 @@
 module Pod
     class XCFrameworkBuilder
-        def initialize(name, source_dir)
+        def initialize(name, source_dir, create_swiftinterface)
             @name = name
             @source_dir = source_dir
+            @create_swiftinterface = create_swiftinterface
         end
 
         def build_static_xcframework
@@ -27,11 +28,27 @@ module Pod
             archs = `lipo -archs #{lib_path}`.split
             os_archs = archs & ['arm64', 'armv7', 'armv7s']
             sim_archs = archs & ['i386', 'x86_64']
+
+            # check_swiftmodule
+            swiftmodule_path = Dir.glob("#{framework_path}/Modules/*.swiftmodule").first
+            unless swiftmodule_path.nil?
+                if Dir.glob("#{swiftmodule_path}/*.swiftinterface").empty?
+                    unless @create_swiftinterface
+                        UI.puts "Framework中包含swiftmodule文件，但是没有swiftinterface，无法创建xcframework，请检查Framework文件。或者使用`--create-swiftinterface`参数"
+                        return
+                    end
+                    arm_swiftinterface = Pathname.new("#{swiftmodule_path}/arm.swiftinterface")
+                    File.new(arm_swiftinterface, "w+").close
+                end
+            end
     
+            # 1. remove iphone os/simulator paths
+            clean_intermediate_path
+
             frameworks_path = Array.new()
-            # 1. copy iphoneos framework
+            # 2. copy iphoneos framework
             if os_archs.count > 0
-                path = Pathname.new("#{@source_dir}/iphoneos")
+                path = Pathname.new("#{@source_dir}/#{iphoneos_target_path}")
                 path.mkdir unless path.exist?
                 `cp -a #{framework_path} #{path}/`
                 extract_archs = os_archs.map do |arch|
@@ -43,9 +60,9 @@ module Pod
                 frameworks_path += ["#{fwk_path}"]
                 `lipo #{extract_archs.join(' ')} "#{fwk_path}/#{lib_file}" -o "#{fwk_path}/#{lib_file}"`
             end
-            # 2. copy iphonesimulation framework
+            # 3. copy iphonesimulation framework
             if sim_archs.count > 0
-                path = Pathname.new("#{@source_dir}/iphonesimulation")
+                path = Pathname.new("#{@source_dir}/#{iphonesimulator_target_path}")
                 path.mkdir unless path.exist?
                 `cp -a #{framework_path} #{path}/`
                 extract_archs = sim_archs.map do |arch|
@@ -58,27 +75,37 @@ module Pod
                 `lipo #{extract_archs.join(' ')} "#{fwk_path}/#{lib_file}" -o "#{fwk_path}/#{lib_file}"`
             end
 
-            # 3. build xcframework
+            # 4. build xcframework
             command = "xcodebuild -create-xcframework -framework #{frameworks_path.join(' -framework ')} -output #{@source_dir}/#{@name}.xcframework 2>&1"
             output = `#{command}`.lines.to_a
             result = $?
     
-            # 4. remove iphone os/simulation paths
-            ['iphoneos', 'iphonesimulation'].each do |path|
-                file_path = "#{@source_dir}/#{path}"
-                if File.exist? file_path
-                    Pathname.new(file_path).rmtree
-                end
-            end
+            # 5. remove iphone os/simulator paths
+            clean_intermediate_path
 
             # show error
             if result.exitstatus != 0
                 puts UI::BuildFailedReport.report(command, output)
                 Process.exit
             end
-
-            # 5. generate success
             UI.puts("Generate #{@name}.xcframework succees")
+        end
+
+        private
+        def clean_intermediate_path
+            [iphoneos_target_path, iphonesimulator_target_path].each do |path|
+                file_path = "#{@source_dir}/#{path}"
+                if File.exist? file_path
+                    FileUtils.rm_rf(file_path)
+                end
+            end
+        end
+
+        def iphoneos_target_path
+            "#{@name}_iphoneos"
+        end
+        def iphonesimulator_target_path
+            "#{@name}_iphonesimulator"
         end
     end
 end

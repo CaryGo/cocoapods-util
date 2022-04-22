@@ -28,8 +28,9 @@ module Pod
             static_installer.pods_project.targets.each do |target|
               target.build_configurations.each do |config|
                 config.build_settings['CLANG_MODULES_AUTOLINK'] = 'NO'
-                # config.build_settings['GCC_GENERATE_DEBUGGING_SYMBOLS'] = 'NO'
-                config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+                # config.build_settings['GCC_GENERATE_DEBUGGING_SYMBOLS'] = 'NO'# 设置不生成Debug编译信息
+                config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'# 排除模拟器64位架构
+                config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'# 编译swift生成swiftinterface文件
               end
             end
             static_installer.pods_project.save
