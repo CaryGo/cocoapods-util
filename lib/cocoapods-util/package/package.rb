@@ -10,7 +10,7 @@ module Pod
     class Util < Command
         class Package < Util
             self.summary = '通过podspec编译静态库（library/framework/xcframework）。'
-            self.description = "本插件属于在cocoapods-packager的基础上做的修改，仅支持编译静态库。另外支持use_modular_headers!、排除模拟器、排除特定架构、编译xcframework等。"
+            self.description = "本插件属于在cocoapods-packager的基础上做的修改，支持编译swift。另外支持use_modular_headers!、排除模拟器、排除特定架构、编译xcframework等。"
             self.arguments = [
               CLAide::Argument.new('NAME', true),
               CLAide::Argument.new('SOURCE', false)

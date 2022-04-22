@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = CocoapodsUtil::VERSION
   spec.authors       = ['guojiashuang']
   spec.email         = ['guojiashuang@live.com']
-  spec.description   = %q{cocoapods-util是一个CocoaPods插件，包括package、framework生成xcframework、二进制link源码等功能。}
-  spec.summary       = %q{一个常用插件功能的集合，目前支持打包、生成xcframework、二进制源码链接，后续将支持生成编译产物加快编译速度等功能。}
+  spec.description   = %q{cocoapods-util是一个常用插件功能的集合，致力于解决日常开发中遇到的一些问题。目前支持打包二进制（library/framework/xcframework/支持swift）、使用framework生成xcframework、二进制link源码（不切换源码，直接用二进制调试）等功能。}
+  spec.summary       = %q{一个常用插件功能的集合，致力于解决日常开发中遇到的一些问题。目前支持打包二进制（library/framework/xcframework/支持swift）、使用framework生成xcframework、二进制link源码（不切换源码，直接用二进制调试）等功能。}
   spec.homepage      = 'https://github.com/CaryGo/cocoapods-util'
   spec.license       = 'MIT'
 
