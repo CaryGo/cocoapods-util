@@ -10,13 +10,15 @@ module Pod
             def self.options
               [
                 ['--all', 'list all component.'],
-                ['--name', 'componment name.']
+                ['--name', 'componment name.'],
+                ['--showmore', 'show more information.']
               ]
             end
 
             def initialize(argv)
               @name = argv.option('name')
               @all_componment = argv.flag?('all', true) && (@name.nil? || @name.empty?)
+              @showmore = argv.flag?('showmore', false)
               super
             end
   
@@ -31,13 +33,17 @@ module Pod
               if @all_componment
                 check_all_componment
               else
-                dependencys = @lockfile.internal_data["DEPENDENCIES"]
+                dependencys = @lockfile.internal_data["DEPENDENCIES"].compact
                 dependencys.select! {|item|
                   item =~ /^#{@name}.*$/
                 }
                 help! "没有找到#{@name}组件的相关信息，请检查输入的组件名称" if dependencys.empty?
                 tag_info = check_componment_with_name(@name)
-                UI.puts "1). #{dependencys.shift} #{tag_info}".green
+                UI.puts "1).".red " #{dependencys.first} ".green "#{tag_info}".yellow
+                if @showmore
+                  repo_name = check_repos(@name)
+                  UI.puts "   - SPEC REPO: #{repo_name}".green unless repo_name.nil?
+                end
               end
             end
 
@@ -48,28 +54,50 @@ module Pod
               dependencys.each_index {|index|
                 name = dependencys[index]
                 tag_info = check_componment_with_name(name)
-                UI.puts "#{index+1}). #{name} #{tag_info}".green
+                UI.puts "#{index+1}).".red " #{name} ".green "#{tag_info}".yellow
+                if @showmore
+                  repo_name = check_repos(name)
+                  UI.puts "   - SPEC REPO: #{repo_name}".green unless repo_name.nil?
+                end
               }
             end
 
             def check_componment_with_name(name)
               name = name.split(' ').first
-              tag_info = nil
+              tag = nil
               @lockfile.internal_data["PODS"].each {|item|
                 if item.is_a?(Hash)
-                  item.each {|key, value|
+                  item.each_key {|key|
                     if key =~ /^#{name}\s+\([^\)]*\)$/
-                      tag_info = key.gsub(/^#{name}\s+/, '')
+                      tag = key.gsub(/^#{name}\s+/, '')
+                      break
                     end
                   }
                 elsif item.is_a?(String)
                   if item =~ /^#{name}\s+\([^\)]*\)$/
-                    tag_info = item.gsub(/^#{name}\s+/, '')
+                    tag = item.gsub(/^#{name}\s+/, '')
                   end
                 end
-                break unless tag_info.nil?
+                break unless tag.nil?
               }
-              tag_info
+              tag
+            end
+
+            def check_repos(name)
+              name = name.split(' ').first
+              repo_name = nil
+              @lockfile.internal_data["SPEC REPOS"].each {|key, value|
+                if value.is_a?(Array)
+                  value.each {|item|
+                    if item == "#{name}"
+                      repo_name = key
+                      break
+                    end
+                  }
+                end
+                break unless repo_name.nil?
+              }
+              repo_name
             end
           end
         end
