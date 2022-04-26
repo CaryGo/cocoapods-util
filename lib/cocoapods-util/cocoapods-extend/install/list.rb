@@ -5,8 +5,11 @@ module Pod
       class Util < Command
         class Install < Util
           class List < Install
-            self.summary = '列出pod install安装的组件信息'
+            self.summary = '列出pod install安装的组件信息，Podfile.lock不传则在当前目录查找'
             self.command = 'list'
+            self.arguments = [
+              CLAide::Argument.new('Podfile.lock', false)
+            ]
             def self.options
               [
                 ['--all', 'list all component.'],
@@ -16,6 +19,7 @@ module Pod
             end
 
             def initialize(argv)
+              @lockfile_path = argv.shift_argument
               @name = argv.option('name')
               @all_componment = argv.flag?('all', true) && (@name.nil? || @name.empty?)
               @showmore = argv.flag?('showmore', false)
@@ -27,8 +31,12 @@ module Pod
             end
   
             def run
-              @lockfile = Pod::Config.instance.lockfile
-              help! '没有查找到Podfile.lock文件，你需要在Podfile所在目录执行。' unless @lockfile
+              if @lockfile_path.nil?
+                @lockfile = Pod::Config.instance.lockfile
+              else
+                @lockfile = Lockfile.from_file(Pathname.new(@lockfile_path))
+              end
+              help! '没有查找到Podfile.lock文件，你需要在Podfile所在目录执行或传入Podfile.lock文件路径。' unless @lockfile
 
               if @all_componment
                 check_all_componment
