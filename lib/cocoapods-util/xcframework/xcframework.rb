@@ -4,7 +4,10 @@ module Pod
     class Command
       class Util < Command
           class XCFramework < Util
-              self.summary = '根据传入Framework在同目录下生成XCFramework。传入参数为framework路径'
+              self.summary = '根据传入framework在同目录下生成xcframework'
+              self.description = <<-DESC
+              根据传入framework在同目录下生成xcframework
+              DESC
               self.command = 'xcframework'
               self.arguments = [
                 CLAide::Argument.new('FRAMEWORK_PATH', true),

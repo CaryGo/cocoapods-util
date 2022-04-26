@@ -5,7 +5,7 @@ module Pod
       class Util < Command
         class Install < Util
           class List < Install
-            self.summary = '列出pod install安装的组件信息。'
+            self.summary = '列出pod install安装的组件信息'
             self.command = 'list'
             def self.options
               [

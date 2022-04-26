@@ -4,9 +4,9 @@ module Pod
     class Command
       class Util < Command
           class Source < Util
-              self.summary = '根据传入library、framework或xcframework，添加源码软链接，需要传入或输入源码的路径'
+              self.summary = '根据传入library、framework或xcframework，添加源码软链接'
               self.description = <<-DESC
-                需要注意参数中的`link、unlink、checklinked和checkcompile是互斥的，只需要传入一个参数。`
+                需要注意参数中的`link、unlink、checklinked和checkcompile`是互斥的，只需要传入一个参数
               DESC
               self.command = 'linksource'
               self.arguments = [

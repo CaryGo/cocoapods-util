@@ -3,7 +3,7 @@ module Pod
     class Util < Command
       class Repo < Util
         class Push < Repo
-          self.summary = '和`pod repo push`命令使用步骤完全一致，可以设置参数`--skip-validate`跳过验证直接推送到私有仓库，不设置时调用原`push`的命令，不影响原功能。使用`pod util repo push --help`查看更多。'
+          self.summary = '和`pod repo push`命令使用步骤完全一致，可以设置参数`--skip-validate`跳过验证直接推送到私有仓库，不设置时调用原`push`的命令，不影响原功能。使用`pod util repo push --help`查看更多'
           def initialize(argv)
             @skip_validate = argv.flag?('skip-validate', false)
             super
