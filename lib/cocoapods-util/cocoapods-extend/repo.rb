@@ -1,4 +1,4 @@
-require 'cocoapods-util/cocoapods-extend/repo/push/push'
+require 'cocoapods-util/cocoapods-extend/repo/push'
 module Pod
     class Command
       class Util < Command

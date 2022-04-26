@@ -12,7 +12,7 @@ module Pod
 
           def validate!
             # 用到的时候再加载
-            require 'cocoapods-util/cocoapods-extend/repo/push/push_helper'
+            require 'cocoapods-util/cocoapods-extend/repo/push_helper'
             @target = Pod::Command::Repo::Push.new(CLAide::ARGV.new(@argvs))
             @target.validate!
           end
