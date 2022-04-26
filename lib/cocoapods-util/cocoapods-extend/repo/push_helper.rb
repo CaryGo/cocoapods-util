@@ -23,13 +23,11 @@ module Pod
             # 调用原方法的两种方式
             old_validate_podspec_files = instance_method(:validate_podspec_files)
             define_method(:validate_podspec_files) do
-                UI.puts "validate_podspec_files"
                 old_validate_podspec_files.bind(self).() unless @skip_validate
             end
 
-            alias :old_check_repo_status :check_repo_status
+            alias_method :old_check_repo_status, :check_repo_status
             def check_repo_status
-                UI.puts "check_repo_status"
                 old_check_repo_status unless @skip_validate
             end
         end
