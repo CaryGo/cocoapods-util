@@ -41,6 +41,8 @@ module Pod
 
       if @platform.name == :ios
         build_static_library_for_ios(output)
+      else
+        build_static_library_for_mac(output)
       end
 
       # 1. copy header
@@ -67,6 +69,8 @@ module Pod
 
       if @platform.name == :ios
         build_static_library_for_ios(output)
+      else
+        build_static_library_for_mac(output)
       end
 
       copy_headers
@@ -98,12 +102,17 @@ module Pod
       static_libs = static_libs_in_sandbox('build')
       static_libs += static_libs_in_sandbox('build-sim') unless @exclude_sim
       libs = ios_architectures.map do |arch|
-        library = "#{@static_sandbox_root}/build/package-#{arch}.a"
+        library = "#{@static_sandbox_root}/build/#{@spec.name}-#{arch}.a"
         `libtool -arch_only #{arch} -static -o #{library} #{static_libs.join(' ')}`
         library
       end
 
       `lipo -create -output #{output} #{libs.join(' ')}`
+    end
+
+    def build_static_library_for_mac(output)
+      static_libs = static_libs_in_sandbox('build')
+      `libtool -static -o #{output} #{static_libs.join(' ')}`
     end
 
     def compile
@@ -248,9 +257,9 @@ MAP
     def static_libs_in_sandbox(build_dir = 'build')
       UI.puts 'Excluding dependencies'
       if build_dir == 'build'
-        Dir.glob("#{@static_sandbox_root}/#{build_dir}/#{@config}-iphoneos/#{@spec.name}/lib#{@spec.name}.a")
+        Dir.glob("#{@static_sandbox_root}/#{build_dir}/**/#{@spec.name}/lib#{@spec.name}.a")
       else
-        Dir.glob("#{@static_sandbox_root}/#{build_dir}/#{@config}-iphonesimulator/#{@spec.name}/lib#{@spec.name}.a")
+        Dir.glob("#{@static_sandbox_root}/#{build_dir}/**/#{@spec.name}/lib#{@spec.name}.a")
       end
     end
 

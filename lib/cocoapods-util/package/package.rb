@@ -117,8 +117,7 @@ module Pod
     
             def build_package
               @spec.available_platforms.each do |platform|
-                # 暂时仅支持ios框架的编译
-                if platform.name.to_s == 'ios'
+                if platform.name.to_s == 'ios' || platform.name.to_s == 'osx'
                   build_in_sandbox(platform)
                 end
               end

@@ -35,8 +35,12 @@ module Pod
             elsif archs.count == 1
                 frameworks_path += [framework_path]
             else
-                os_archs = archs & ['arm64', 'armv7', 'armv7s']
-                sim_archs = archs & ['i386', 'x86_64']
+                # 如果是MacOSX不需要处理
+                is_macosx_platform = `strings #{lib_path} | grep -E -i '/Platforms/MacOSX.platform' | head -n 1`
+                if is_macosx_platform.empty?
+                    os_archs = archs & ['arm64', 'armv7', 'armv7s']
+                    sim_archs = archs & ['i386', 'x86_64']
+                end
             end
 
             # check_swiftmodule
