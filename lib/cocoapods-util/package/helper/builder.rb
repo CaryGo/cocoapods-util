@@ -282,7 +282,7 @@ MAP
       archs = %w(x86_64 i386 arm64 armv7 armv7s)
       arch_for_sim = %w(x86_64 i386)
       archs -= arch_for_sim if @exclude_sim
-      archs = archs - @exclude_archs.split
+      archs = archs - @exclude_archs.split(',')
       vendored_libraries.each do |library|
         archs = `lipo -info #{library}`.split & archs
       end

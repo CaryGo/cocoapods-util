@@ -29,9 +29,10 @@ module Pod
                   'pods from (defaults to https://github.com/CocoaPods/Specs.git)'],
                 ['--exclude-sim', '排除模拟器架构，仅编译真机对应的架构。'],
                 ['--use-modular-headers', '开启use_modular_headers!'],
-                ['--exclude-archs', '排除特定的架构，如`--exclude-archs=armv7s`'],
-                ['--dependency-config', '依赖的pod文件配置，为一个json数组，可以配置分支、tag、source源等。[{"PodA":{"git":"xxx", "branch":"xxx"}},{"PodB":{"source":"xxx"}}]'],
+                ['--exclude-archs=armv7s,armv7', '排除特定的架构'],
+                ['--dependency-config=jsonArray', '依赖的pod文件配置，为一个json数组，可以配置分支、tag、source源等。[{"PodA":{"git":"xxx", "branch":"xxx"}},{"PodB":{"source":"xxx"}}]'],
                 ['--contains-resources', '生成的framework中是否包含bundle文件，默认不把bundle文件放到framework中。'],
+                ['--platforms=ios,osx,watchos,tvos', '编译全部平台的代码。']
               ]
             end
     
@@ -61,6 +62,7 @@ module Pod
     
               @exclude_archs = argv.option('exclude-archs', '')
               @framework_contains_resources = argv.flag?('contains-resources', false)
+              @platforms = argv.option('platforms', 'ios')
     
               dependency_config = argv.option('dependency-config', '[]')
               @dependency_config = JSON.parse(dependency_config)
@@ -116,8 +118,9 @@ module Pod
             end
     
             def build_package
+              platforms = @platforms.split(',')
               @spec.available_platforms.each do |platform|
-                if platform.name.to_s == 'ios' || platform.name.to_s == 'osx'
+                if platforms.include?(platform.name.to_s)
                   build_in_sandbox(platform)
                 end
               end
