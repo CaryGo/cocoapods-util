@@ -35,9 +35,19 @@ module Pod
             elsif archs.count == 1
                 frameworks_path += [framework_path]
             else
-                # 如果是MacOSX不需要处理
-                is_macosx_platform = `strings #{lib_path} | grep -E -i '/Platforms/MacOSX.platform' | head -n 1`
-                if is_macosx_platform.empty?
+                platform = `strings #{lib_path} | grep -E -i '/Platforms/.*\.platform/' | head -n 1`.chomp!
+                if platform =~ /iPhone[^\.]*\.platform/ # ios
+                    os_archs = archs & ['arm64', 'armv7', 'armv7s']
+                    sim_archs = archs & ['i386', 'x86_64']
+                elsif platform =~ /MacOSX.platform/ # macos
+                    os_archs = ['arm64', 'x86_64']
+                elsif platform =~ /WatchOS.platform/ # watchOS
+                    os_archs = archs & ['armv7k', 'arm64_32']
+                    sim_archs = archs & ['arm64', 'i386', 'x86_64']
+                elsif platform =~ /AppleTVOS.platform/ # tvOS
+                    os_archs = archs & ['arm64']
+                    sim_archs = archs & ['x86_64']
+                else
                     os_archs = archs & ['arm64', 'armv7', 'armv7s']
                     sim_archs = archs & ['i386', 'x86_64']
                 end
@@ -61,7 +71,7 @@ module Pod
 
             # 2. copy iphoneos framework
             if os_archs.count > 0
-                path = Pathname.new("#{@source_dir}/#{iphoneos_target_path}")
+                path = Pathname.new("#{@source_dir}/#{os_target_path}")
                 path.mkdir unless path.exist?
                 `cp -a #{framework_path} #{path}/`
                 extract_archs = os_archs.map do |arch|
@@ -75,7 +85,7 @@ module Pod
             end
             # 3. copy iphonesimulation framework
             if sim_archs.count > 0
-                path = Pathname.new("#{@source_dir}/#{iphonesimulator_target_path}")
+                path = Pathname.new("#{@source_dir}/#{simulator_target_path}")
                 path.mkdir unless path.exist?
                 `cp -a #{framework_path} #{path}/`
                 extract_archs = sim_archs.map do |arch|
@@ -106,7 +116,7 @@ module Pod
 
         private
         def clean_intermediate_path
-            [iphoneos_target_path, iphonesimulator_target_path].each do |path|
+            [os_target_path, simulator_target_path].each do |path|
                 file_path = "#{@source_dir}/#{path}"
                 if File.exist? file_path
                     FileUtils.rm_rf(file_path)
@@ -114,11 +124,11 @@ module Pod
             end
         end
 
-        def iphoneos_target_path
-            "#{@name}_iphoneos"
+        def os_target_path
+            "#{@name}_temp_os"
         end
-        def iphonesimulator_target_path
-            "#{@name}_iphonesimulator"
+        def simulator_target_path
+            "#{@name}_temp_simulator"
         end
     end
 end
