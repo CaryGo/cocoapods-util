@@ -10,7 +10,7 @@ module Pod
               DESC
               self.command = 'xcframework'
               self.arguments = [
-                CLAide::Argument.new('FRAMEWORK_PATH', true),
+                CLAide::Argument.new('FRAMEWORK_PATH', true)
               ]
       
               def self.options
@@ -36,7 +36,7 @@ module Pod
               def run
                 # 获取真实路径，~ 为进程所有者的主目录
                 @file_path = File.expand_path(@file_path)
-                if (File.exist? @file_path) == false || !(@file_path =~ /\.framework$/)
+                if !File.exist?(@file_path) || !(@file_path =~ /\.framework$/)
                   help! "路径不存在或传入的路径不是framework文件"
                   return
                 end
@@ -45,7 +45,7 @@ module Pod
                 framework_name = File.basename(@file_path, ".framework")
 
                 target_dir = "#{source_dir}/#{framework_name}.xcframework"
-                if File.exist? target_dir
+                if File.exist?(target_dir)
                   if @force
                     Pathname.new(target_dir).rmtree
                   else

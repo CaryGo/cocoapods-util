@@ -39,11 +39,7 @@ module Pod
 
       output = platform_path + "lib#{@spec.name}.a"
 
-      if @platform.name == :ios
-        build_static_library_for_ios(output)
-      else
-        build_static_library_for_mac(output)
-      end
+      build_static_library_for_ios(output)
 
       # 1. copy header
       headers_source_root = "#{@public_headers_root}/#{@spec.name}"
@@ -67,11 +63,7 @@ module Pod
       create_framework
       output = @fwk.versions_path + Pathname.new(@spec.name)
 
-      if @platform.name == :ios
-        build_static_library_for_ios(output)
-      else
-        build_static_library_for_mac(output)
-      end
+      build_static_library_for_ios(output)
 
       copy_headers
       copy_license
@@ -93,8 +85,17 @@ module Pod
     end
 
     def build_sim_libraries(defines)
-      if @platform.name == :ios && @exclude_sim == false
+      if @exclude_sim
+        return
+      end
+
+      case @platform.name
+      when :ios
         xcodebuild(defines, '-sdk iphonesimulator', 'build-sim')
+      when :watchos
+        xcodebuild(defines, '-sdk watchsimulator', 'build-sim')
+      when :tvos
+        xcodebuild(defines, '-sdk appletvsimulator', 'build-sim')
       end
     end
 
@@ -110,14 +111,8 @@ module Pod
       `lipo -create -output #{output} #{libs.join(' ')}`
     end
 
-    def build_static_library_for_mac(output)
-      static_libs = static_libs_in_sandbox('build')
-      `libtool -static -o #{output} #{static_libs.join(' ')}`
-    end
-
     def compile
-      defines = "GCC_PREPROCESSOR_DEFINITIONS='$(inherited) PodsDummy_Pods_#{@spec.name}=PodsDummy_PodPackage_#{@spec.name}'"
-      defines << ' ' << @spec.consumer(@platform).compiler_flags.join(' ')
+      defines = ("" << @spec.consumer(@platform).compiler_flags.join(' '))
 
       if @platform.name == :ios
         options = ios_build_options
@@ -135,14 +130,14 @@ module Pod
         each { |h| `ditto #{h} #{@fwk.headers_path}/#{h.sub(headers_source_root, '')}` }
 
       # check swift headers
-      swift_headers = Dir.glob("#{@static_sandbox_root}/build/#{@config}-iphoneos/#{@spec.name}/**/*-{Swift,umbrella}.h")
+      swift_headers = Dir.glob("#{@static_sandbox_root}/build/#{os_build_name}/#{@spec.name}/**/*-{Swift,umbrella}.h")
       swift_headers.each { |h| 
         h_path = h.gsub(/\s/, "\\ ")
         `cp -rp #{h_path} #{@fwk.headers_path}/` 
       }
 
       # check swiftmodule files
-      swiftmodule_path = "#{@static_sandbox_root}/build/#{@config}-iphoneos/#{@spec.name}/#{@spec.name}.swiftmodule"
+      swiftmodule_path = "#{@static_sandbox_root}/build/#{os_build_name}/#{@spec.name}/#{@spec.name}.swiftmodule"
       if File.exist? swiftmodule_path
         @fwk.module_map_path.mkpath unless @fwk.module_map_path.exist?
         `cp -rp #{swiftmodule_path.to_s} #{@fwk.module_map_path}/`
@@ -203,13 +198,13 @@ MAP
         platform_path = Pathname.new(@platform.name.to_s)
         platform_path.mkdir unless platform_path.exist?
         
-        bundles = Dir.glob("#{@static_sandbox_root}/build/#{@config}-iphoneos/#{@spec.name}/*.bundle")
+        bundles = Dir.glob("#{@static_sandbox_root}/build/#{os_build_name}/#{@spec.name}/*.bundle")
         resources = expand_paths(@spec.consumer(@platform).resources)
         if bundles.count > 0 || resources.count > 0
           resources_path = platform_path + "Resources"
           resources_path.mkdir unless resources_path.exist?
           if bundles.count > 0
-            `cp -rp #{@static_sandbox_root}/build/#{@config}-iphoneos/#{@spec.name}/*.bundle #{resources_path} 2>&1`
+            `cp -rp #{@static_sandbox_root}/build/#{os_build_name}/#{@spec.name}/*.bundle #{resources_path} 2>&1`
           end
           if resources.count > 0
             `cp -rp #{resources.join(' ')} #{resources_path}`
@@ -221,8 +216,8 @@ MAP
         return
       end
 
-      bundles = Dir.glob("#{@static_sandbox_root}/build/#{@config}-iphoneos/#{@spec.name}/*.bundle")
-      `cp -rp #{@static_sandbox_root}/build/#{@config}-iphoneos/#{@spec.name}/*.bundle #{@fwk.resources_path} 2>&1`
+      bundles = Dir.glob("#{@static_sandbox_root}/build/#{os_build_name}/#{@spec.name}/*.bundle")
+      `cp -rp #{@static_sandbox_root}/build/#{os_build_name}/#{@spec.name}/*.bundle #{@fwk.resources_path} 2>&1`
       resources = expand_paths(@spec.consumer(@platform).resources)
       if resources.count == 0 && bundles.count == 0
         @fwk.delete_resources
@@ -278,11 +273,39 @@ MAP
       "ARCHS=\'#{ios_architectures.join(' ')}\'"
     end
 
+    def os_build_name
+      build_name = "#{@config}"
+      case @platform.name
+      when :ios
+        build_name += "-iphoneos"
+      when :osx
+        build_name += ""
+      when :watchos
+        build_name += '-watchos'
+      when :tvos
+        build_name += '-appletvos'
+      end
+      build_name
+    end
+
     def ios_architectures
-      archs = %w(x86_64 i386 arm64 armv7 armv7s)
-      arch_for_sim = %w(x86_64 i386)
-      archs -= arch_for_sim if @exclude_sim
-      archs = archs - @exclude_archs.split(',')
+      case @platform.name
+      when :ios
+        os_archs = ['arm64', 'armv7', 'armv7s']
+        sim_archs = ['i386', 'x86_64']
+      when :osx
+        os_archs = ['arm64', 'x86_64']
+        sim_archs = []
+      when :watchos
+        os_archs = ['armv7k', 'arm64_32']
+        sim_archs = ['arm64', 'i386', 'x86_64']
+      when :tvos
+        os_archs = ['arm64']
+        sim_archs = ['x86_64']
+      end
+      archs = os_archs
+      archs += sim_archs unless @exclude_sim
+      archs -= @exclude_archs.split(',')
       vendored_libraries.each do |library|
         archs = `lipo -info #{library}`.split & archs
       end
