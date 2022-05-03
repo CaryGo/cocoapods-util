@@ -30,7 +30,7 @@ module Pod
                 ['--exclude-sim', '排除模拟器架构，仅编译真机对应的架构。'],
                 ['--use-modular-headers', '开启use_modular_headers!'],
                 ['--exclude-archs=armv7s,armv7', '排除特定的架构'],
-                ['--dependency-config=jsonArray', '依赖的pod文件配置，为一个json数组，可以配置分支、tag、source源等。[{"PodA":{"git":"xxx", "branch":"xxx"}},{"PodB":{"source":"xxx"}}]'],
+                ['--dependency-config=Hash', '依赖的pod文件配置，为一个json数组，可以配置分支、tag、source源等。{"PodA":{"git":"xxx", "branch":"xxx"}},{"PodB":{"source":"xxx"}}'],
                 ['--contains-resources', '生成的framework中是否包含bundle文件，默认不把bundle文件放到framework中。'],
                 ['--platforms=ios,osx,watchos,tvos', '编译全部平台的代码。']
               ]

@@ -52,14 +52,14 @@ module Pod
           Pod::Podfile.new do
             sources.each { |s| source s }
             platform(platform_name, deployment_target)
-            pod(spec_name, options)
-
+            pod(spec_name, options) unless dependency_config.keys.include?(spec_name)
+            
             dependency_config.each do |name, config|
-              options = {}
+              dependency_options = {}
               config.each do |key, value|
-                options[:"#{key}"] = value
+                dependency_options[key.to_sym] = value
               end
-              pod(name, options)
+              pod(name, dependency_options)
             end
 
             use_modular_headers! if use_modular_headers
