@@ -1,4 +1,6 @@
 require 'cocoapods-util/xcframework/xcramework_build.rb'
+require 'cocoapods-util/package/helper/framework_builder.rb'
+require 'cocoapods-util/package/helper/library_builder.rb'
 
 module Pod
   class Builder
@@ -10,7 +12,7 @@ module Pod
       @public_headers_root = public_headers_root
       @spec = spec
       @config = config
-      @exclude_sim = exclude_sim
+      @exclude_sim = exclude_sim || @platform.name.to_s == 'osx'
       @exclude_archs = exclude_archs
       @framework_contains_resources = framework_contains_resources
 
@@ -29,49 +31,53 @@ module Pod
     end
 
     def build_static_library
-      UI.puts("Building static library #{@spec} with configuration #{@config}")
+      UI.puts("Building static #{@platform.name.to_s} library #{@spec} with configuration #{@config}")
 
       defines = compile
-      build_sim_libraries(defines)
+      build_sim_libraries(defines) unless @exclude_sim
 
-      platform_path = Pathname.new(@platform.name.to_s)
-      platform_path.mkdir unless platform_path.exist?
-
-      output = platform_path + "lib#{@spec.name}.a"
-
-      build_static_library_for_ios(output)
-
-      # 1. copy header
-      headers_source_root = "#{@public_headers_root}/#{@spec.name}"
-      headers = Dir.glob("#{headers_source_root}/**/*.h")
-      if headers.count > 0
-        headers_path = platform_path + "Headers"
-        headers_path.mkdir unless headers_path.exist?
-        headers.each { |h| `ditto #{h} #{headers_path}/#{h.sub(headers_source_root, '')}` }
-      end
-
-      # 2. copy resources
-      copy_resources
+      create_library
     end
 
     def build_static_framework
-      UI.puts("Building static framework #{@spec} with configuration #{@config}")
+      UI.puts("Building static #{@platform.name.to_s} framework #{@spec} with configuration #{@config}")
 
       defines = compile
-      build_sim_libraries(defines)
+      build_sim_libraries(defines) unless @exclude_sim
 
-      create_framework
-      output = @fwk.versions_path + Pathname.new(@spec.name)
+      frameworks = generate_frameworks
+      framework_paths = frameworks.map {|fwk| fwk.fwk_path }
+      # merge framework
+      if (1..2) === frameworks.count
+        fwk = frameworks.first
+        fwk_lib = "#{fwk.versions_path}/#{@spec.name}"
+        if frameworks.count == 2
+          other_fwk = frameworks.last
+          other_fwk_lib = "#{other_fwk.versions_path}/#{@spec.name}"
 
-      build_static_library_for_ios(output)
+          # check appletv archs
+          if @platform.name.to_s == 'tvos'
+            archs = `lipo -archs #{fwk_lib}`.split
+            remove_archs = `lipo -archs #{other_fwk_lib}`.split & archs    
+            `lipo -remove #{remove_archs.join(' -remove ')} #{other_fwk_lib} -output #{other_fwk_lib}` unless remove_archs.empty?
+          end
 
-      copy_headers
-      copy_license
-      copy_resources
+          `lipo -create #{fwk_lib} #{other_fwk_lib} -output #{fwk_lib}`
+        end
+        `cp -a #{fwk.fwk_path} #{@platform.name.to_s}/`
+      end
+      # delete framework
+      framework_paths.each { |path| FileUtils.rm_rf(File.dirname(path)) }
     end
 
     def build_static_xcframework
-      build_static_framework
+      UI.puts("Building static #{@platform.name.to_s} framework #{@spec} with configuration #{@config}")
+
+      defines = compile
+      build_sim_libraries(defines) unless @exclude_sim
+
+      frameworks = generate_frameworks
+      framework_paths = frameworks.map {|fwk| fwk.fwk_path }
 
       # gemerate xcframework
       xcbuilder = XCFrameworkBuilder.new(
@@ -79,16 +85,26 @@ module Pod
         @platform.name.to_s,
         true
       )
-      xcbuilder.build_static_xcframework
+      xcbuilder.generate_xcframework(framework_paths)
       # delete framework
-      FileUtils.rm_rf("#{@platform.name.to_s}/#{@spec.name}.framework")
+      framework_paths.each { |path| FileUtils.rm_rf(File.dirname(path)) }
+    end
+
+    def generate_frameworks
+      frameworks = []
+      os_names = ['build']
+      os_names += ['build-sim'] unless @exclude_sim
+      os_names.each do |os|
+        frameworks << create_framework(os)
+        framework_build_static_library(os)
+        framework_copy_headers(os)
+        framework_copy_license
+        framework_copy_resources(os)
+      end
+      frameworks
     end
 
     def build_sim_libraries(defines)
-      if @exclude_sim
-        return
-      end
-
       case @platform.name
       when :ios
         xcodebuild(defines, '-sdk iphonesimulator', 'build-sim')
@@ -97,18 +113,6 @@ module Pod
       when :tvos
         xcodebuild(defines, '-sdk appletvsimulator', 'build-sim')
       end
-    end
-
-    def build_static_library_for_ios(output)
-      static_libs = static_libs_in_sandbox('build')
-      static_libs += static_libs_in_sandbox('build-sim') unless @exclude_sim
-      libs = ios_architectures.map do |arch|
-        library = "#{@static_sandbox_root}/build/#{@spec.name}-#{arch}.a"
-        `libtool -arch_only #{arch} -static -o #{library} #{static_libs.join(' ')}`
-        library
-      end
-
-      `lipo -create -output #{output} #{libs.join(' ')}`
     end
 
     def compile
@@ -121,132 +125,6 @@ module Pod
       xcodebuild(defines, options)
 
       defines
-    end
-
-    def copy_headers
-      headers_source_root = "#{@public_headers_root}/#{@spec.name}"
-
-      Dir.glob("#{headers_source_root}/**/*.h").
-        each { |h| `ditto #{h} #{@fwk.headers_path}/#{h.sub(headers_source_root, '')}` }
-
-      # check swift headers
-      swift_headers = Dir.glob("#{@static_sandbox_root}/build/#{os_build_name}/#{@spec.name}/**/*-{Swift,umbrella}.h")
-      swift_headers.each { |h| 
-        h_path = h.gsub(/\s/, "\\ ")
-        `cp -rp #{h_path} #{@fwk.headers_path}/` 
-      }
-
-      # check swiftmodule files
-      swiftmodule_path = "#{@static_sandbox_root}/build/#{os_build_name}/#{@spec.name}/#{@spec.name}.swiftmodule"
-      if File.exist? swiftmodule_path
-        @fwk.module_map_path.mkpath unless @fwk.module_map_path.exist?
-        `cp -rp #{swiftmodule_path.to_s} #{@fwk.module_map_path}/`
-      end
-
-      # umbrella header name
-      header_name = "#{@spec.name}"
-      if File.exist? "#{@fwk.headers_path}/#{@spec.name}-umbrella.h"
-        header_name = "#{@spec.name}-umbrella"
-      end
-
-      # If custom 'module_map' is specified add it to the framework distribution
-      # otherwise check if a header exists that is equal to 'spec.name', if so
-      # create a default 'module_map' one using it.
-      if !@spec.module_map.nil?
-        module_map_file = @file_accessors.flat_map(&:module_map).first
-        module_map = File.read(module_map_file) if Pathname(module_map_file).exist?
-      elsif File.exist?("#{@fwk.headers_path}/#{header_name}.h")
-        if swift_headers.count > 0
-          module_map = <<MAP
-framework module #{@spec.name} {
-  umbrella header "#{header_name}.h"
-
-  export *
-  module * { export * }
-}
-module #{@spec.name}.Swift {
-  header "#{@spec.name}-Swift.h"
-  requires objc
-}
-MAP
-        else
-            module_map = <<MAP
-framework module #{@spec.name} {
-  umbrella header "#{header_name}.h"
-
-  export *
-  module * { export * }
-}
-MAP
-        end
-      end
-
-      unless module_map.nil?
-        @fwk.module_map_path.mkpath unless @fwk.module_map_path.exist?
-        File.write("#{@fwk.module_map_path}/module.modulemap", module_map)
-      end
-    end
-
-    def copy_license
-      license_file = @spec.license[:file] || 'LICENSE'
-      `cp "#{license_file}" .` if Pathname(license_file).exist?
-    end
-
-    def copy_resources
-      unless @framework_contains_resources
-        # copy resources
-        platform_path = Pathname.new(@platform.name.to_s)
-        platform_path.mkdir unless platform_path.exist?
-        
-        bundles = Dir.glob("#{@static_sandbox_root}/build/#{os_build_name}/#{@spec.name}/*.bundle")
-        resources = expand_paths(@spec.consumer(@platform).resources)
-        if bundles.count > 0 || resources.count > 0
-          resources_path = platform_path + "Resources"
-          resources_path.mkdir unless resources_path.exist?
-          if bundles.count > 0
-            `cp -rp #{@static_sandbox_root}/build/#{os_build_name}/#{@spec.name}/*.bundle #{resources_path} 2>&1`
-          end
-          if resources.count > 0
-            `cp -rp #{resources.join(' ')} #{resources_path}`
-          end
-        end
-
-        # delete framework resources
-        @fwk.delete_resources if @fwk
-        return
-      end
-
-      bundles = Dir.glob("#{@static_sandbox_root}/build/#{os_build_name}/#{@spec.name}/*.bundle")
-      `cp -rp #{@static_sandbox_root}/build/#{os_build_name}/#{@spec.name}/*.bundle #{@fwk.resources_path} 2>&1`
-      resources = expand_paths(@spec.consumer(@platform).resources)
-      if resources.count == 0 && bundles.count == 0
-        @fwk.delete_resources
-        return
-      end
-      if resources.count > 0
-        `cp -rp #{resources.join(' ')} #{@fwk.resources_path}`
-      end
-    end
-
-    def create_framework
-      @fwk = Framework::Tree.new(@spec.name, @platform.name.to_s)
-      @fwk.make
-    end
-
-    def dependency_count
-      count = @spec.dependencies.count
-
-      @spec.subspecs.each do |subspec|
-        count += subspec.dependencies.count
-      end
-
-      count
-    end
-
-    def expand_paths(path_specs)
-      path_specs.map do |path_spec|
-        Dir.glob(File.join(@source_dir, path_spec))
-      end
     end
 
     def static_libs_in_sandbox(build_dir = 'build')
@@ -273,19 +151,10 @@ MAP
       "ARCHS=\'#{ios_architectures.join(' ')}\'"
     end
 
-    def os_build_name
-      build_name = "#{@config}"
-      case @platform.name
-      when :ios
-        build_name += "-iphoneos"
-      when :osx
-        build_name += ""
-      when :watchos
-        build_name += '-watchos'
-      when :tvos
-        build_name += '-appletvos'
+    def expand_paths(path_specs)
+      path_specs.map do |path_spec|
+        Dir.glob(File.join(@source_dir, path_spec))
       end
-      build_name
     end
 
     def ios_architectures
@@ -301,7 +170,7 @@ MAP
         sim_archs = ['arm64', 'i386', 'x86_64']
       when :tvos
         os_archs = ['arm64']
-        sim_archs = ['x86_64']
+        sim_archs = ['arm64', 'x86_64']
       end
       archs = os_archs
       archs += sim_archs unless @exclude_sim
@@ -310,6 +179,31 @@ MAP
         archs = `lipo -info #{library}`.split & archs
       end
       archs
+    end
+
+    def os_build_name(build_root)
+      build_name = "#{@config}"
+      case build_root
+      when 'build'
+          case @platform.name
+          when :ios
+            build_name += "-iphoneos"
+          when :watchos
+            build_name += '-watchos'
+          when :tvos
+            build_name += '-appletvos'
+          end
+      else
+          case @platform.name
+          when :ios
+            build_name += "-iphonesimulator"
+          when :watchos
+            build_name += '-watchsimulator'
+          when :tvos
+            build_name += '-appletvsimulator'
+          end
+      end
+      build_name
     end
 
     def xcodebuild(defines = '', args = '', build_dir = 'build', target = 'Pods-packager', project_root = @static_sandbox_root, config = @config)
