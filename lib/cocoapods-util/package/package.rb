@@ -32,7 +32,7 @@ module Pod
                 ['--exclude-archs=armv7s,armv7', '排除特定的架构'],
                 ['--dependency-config={}', '依赖的pod文件配置，为一个json数组，可以配置分支、tag、source源等。{"PodA":{"git":"xxx", "branch":"xxx"}},{"PodB":{"source":"xxx"}}'],
                 ['--contains-resources', '生成的framework中是否包含bundle文件，默认不把bundle文件放到framework中。'],
-                ['--platforms=ios,osx,watchos,tvos', '编译全部平台的代码，默认只编译ios平台。']
+                ['--platforms=ios,osx,watchos,tvos,all', '编译全部平台的代码，默认只编译ios平台。']
               ]
             end
     
@@ -119,8 +119,9 @@ module Pod
     
             def build_package
               platforms = @platforms.split(',')
+              all_platforms = platforms.include?('all')
               @spec.available_platforms.each do |platform|
-                if platforms.include?(platform.name.to_s)
+                if all_platforms || platforms.include?(platform.name.to_s)
                   build_in_sandbox(platform)
                 end
               end
@@ -144,8 +145,7 @@ module Pod
               return if target_dir.nil?
     
               work_dir = Dir.tmpdir + '/cocoapods-' + Array.new(8) { rand(36).to_s(36) }.join
-              # work_dir = "#{@source_dir}" + '/cocoapods-' + Array.new(8) { rand(36).to_s(36) }.join
-              puts "#{work_dir}"
+              UI.puts "work_dir: #{work_dir}" if @verbose
               Pathname.new(work_dir).mkdir
               Dir.chdir(work_dir)
     
@@ -165,7 +165,8 @@ module Pod
                 @config,
                 @exclude_sim,
                 @exclude_archs,
-                @framework_contains_resources
+                @framework_contains_resources,
+                @verbose
               )
     
               builder.build(@package_type)

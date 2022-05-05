@@ -12,7 +12,8 @@ module Pod
 
         def generate_static_library
             os_static_libs = static_libs_in_sandbox('build')
-            sim_static_libs = static_libs_in_sandbox('build-sim') unless @exclude_sim
+            sim_static_libs = []
+            sim_static_libs += static_libs_in_sandbox('build-sim') unless @exclude_sim
 
             # check appletv archs
             if @platform.name.to_s == 'tvos'

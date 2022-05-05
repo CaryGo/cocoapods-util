@@ -4,7 +4,7 @@ require 'cocoapods-util/package/helper/library_builder.rb'
 
 module Pod
   class Builder
-    def initialize(platform, static_installer, source_dir, static_sandbox_root, public_headers_root, spec, config, exclude_sim, exclude_archs, framework_contains_resources)
+    def initialize(platform, static_installer, source_dir, static_sandbox_root, public_headers_root, spec, config, exclude_sim, exclude_archs, framework_contains_resources, verbose)
       @platform = platform
       @static_installer = static_installer
       @source_dir = source_dir
@@ -15,6 +15,7 @@ module Pod
       @exclude_sim = exclude_sim || @platform.name.to_s == 'osx'
       @exclude_archs = exclude_archs
       @framework_contains_resources = framework_contains_resources
+      @verbose = verbose
 
       @file_accessors = @static_installer.pod_targets.select { |t| t.pod_name == @spec.name }.flat_map(&:file_accessors)
     end
@@ -37,6 +38,7 @@ module Pod
       build_sim_libraries(defines) unless @exclude_sim
 
       create_library
+      UI.puts("Building static #{@platform.name.to_s} library #{@spec} with configuration #{@config} success")
     end
 
     def build_static_framework
@@ -68,6 +70,8 @@ module Pod
       end
       # delete framework
       framework_paths.each { |path| FileUtils.rm_rf(File.dirname(path)) }
+
+      UI.puts("Building static #{@platform.name.to_s} framework #{@spec} with configuration #{@config} success")
     end
 
     def build_static_xcframework
@@ -212,7 +216,7 @@ module Pod
       end
 
       command = "xcodebuild #{defines} #{args} BUILD_DIR=#{build_dir} clean build -configuration #{config} -target #{target} -project #{project_root}/Pods.xcodeproj 2>&1"
-      puts "#{command}"
+      UI.puts "#{command}" if @verbose
       output = `#{command}`.lines.to_a
 
       if $?.exitstatus != 0
