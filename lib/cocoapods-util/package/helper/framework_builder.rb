@@ -1,6 +1,42 @@
 module Pod
     class Builder
         private
+        def generate_frameworks
+            frameworks = []
+            os_names = ['build']
+            os_names += ['build-sim'] unless @exclude_sim
+            os_names.each do |os|
+              frameworks << create_framework(os)
+              framework_build_static_library(os)
+              framework_copy_headers(os)
+              framework_copy_license
+              framework_copy_resources(os)
+            end
+            frameworks
+        end
+
+        def combine_frameworks(frameworks)
+          # combine frameworks
+          if (1..2) === frameworks.count
+            fwk = frameworks.first
+            fwk_lib = "#{fwk.versions_path}/#{@spec.name}"
+            if frameworks.count == 2
+              other_fwk = frameworks.last
+              other_fwk_lib = "#{other_fwk.versions_path}/#{@spec.name}"
+
+              # check appletv archs
+              if @platform.name.to_s == 'tvos'
+                archs = `lipo -archs #{fwk_lib}`.split
+                remove_archs = `lipo -archs #{other_fwk_lib}`.split & archs    
+                `lipo -remove #{remove_archs.join(' -remove ')} #{other_fwk_lib} -output #{other_fwk_lib}` unless remove_archs.empty?
+              end
+
+              `lipo -create #{fwk_lib} #{other_fwk_lib} -output #{fwk_lib}`
+            end
+            `cp -a #{fwk.fwk_path} #{@platform.name.to_s}/`
+          end
+        end
+
         def create_framework(os_name = '')
             @fwk = Framework::Tree.new(@spec.name, "#{@platform.name.to_s}/#{os_name}")
             @fwk.make

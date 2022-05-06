@@ -1,7 +1,3 @@
-require 'cocoapods-util/xcframework/xcramework_build.rb'
-require 'cocoapods-util/package/helper/framework_builder.rb'
-require 'cocoapods-util/package/helper/library_builder.rb'
-
 module Pod
   class Builder
     def initialize(platform, static_installer, source_dir, static_sandbox_root, public_headers_root, spec, config, exclude_sim, exclude_archs, framework_contains_resources, verbose)
@@ -21,6 +17,9 @@ module Pod
     end
 
     def build(package_type)
+      require 'cocoapods-util/package/helper/framework_builder.rb'
+      require 'cocoapods-util/package/helper/library_builder.rb'
+
       case package_type
       when :static_library
         build_static_library
@@ -32,50 +31,34 @@ module Pod
     end
 
     def build_static_library
-      UI.puts("Building static #{@platform.name.to_s} library #{@spec} with configuration #{@config}")
+      UI.puts("Building #{@platform.name.to_s} static library #{@spec} with configuration #{@config}")
 
       defines = compile
       build_sim_libraries(defines) unless @exclude_sim
 
       create_library
-      UI.puts("Building static #{@platform.name.to_s} library #{@spec} with configuration #{@config} success")
+      UI.puts("Building #{@platform.name.to_s} static library #{@spec} with configuration #{@config} success")
     end
 
     def build_static_framework
-      UI.puts("Building static #{@platform.name.to_s} framework #{@spec} with configuration #{@config}")
+      UI.puts("Building #{@platform.name.to_s} static framework #{@spec} with configuration #{@config}")
 
       defines = compile
       build_sim_libraries(defines) unless @exclude_sim
 
       frameworks = generate_frameworks
-      framework_paths = frameworks.map {|fwk| fwk.fwk_path }
-      # merge framework
-      if (1..2) === frameworks.count
-        fwk = frameworks.first
-        fwk_lib = "#{fwk.versions_path}/#{@spec.name}"
-        if frameworks.count == 2
-          other_fwk = frameworks.last
-          other_fwk_lib = "#{other_fwk.versions_path}/#{@spec.name}"
-
-          # check appletv archs
-          if @platform.name.to_s == 'tvos'
-            archs = `lipo -archs #{fwk_lib}`.split
-            remove_archs = `lipo -archs #{other_fwk_lib}`.split & archs    
-            `lipo -remove #{remove_archs.join(' -remove ')} #{other_fwk_lib} -output #{other_fwk_lib}` unless remove_archs.empty?
-          end
-
-          `lipo -create #{fwk_lib} #{other_fwk_lib} -output #{fwk_lib}`
-        end
-        `cp -a #{fwk.fwk_path} #{@platform.name.to_s}/`
-      end
+      combine_frameworks(frameworks)
+      
       # delete framework
+      framework_paths = frameworks.map {|fwk| fwk.fwk_path }
       framework_paths.each { |path| FileUtils.rm_rf(File.dirname(path)) }
 
-      UI.puts("Building static #{@platform.name.to_s} framework #{@spec} with configuration #{@config} success")
+      UI.puts("Building #{@platform.name.to_s} static framework #{@spec} with configuration #{@config} success")
     end
 
     def build_static_xcframework
-      UI.puts("Building static #{@platform.name.to_s} framework #{@spec} with configuration #{@config}")
+      require 'cocoapods-util/xcframework/xcramework_build.rb'
+      UI.puts("Building #{@platform.name.to_s} static framework #{@spec} with configuration #{@config}")
 
       defines = compile
       build_sim_libraries(defines) unless @exclude_sim
@@ -92,20 +75,6 @@ module Pod
       xcbuilder.generate_xcframework(framework_paths)
       # delete framework
       framework_paths.each { |path| FileUtils.rm_rf(File.dirname(path)) }
-    end
-
-    def generate_frameworks
-      frameworks = []
-      os_names = ['build']
-      os_names += ['build-sim'] unless @exclude_sim
-      os_names.each do |os|
-        frameworks << create_framework(os)
-        framework_build_static_library(os)
-        framework_copy_headers(os)
-        framework_copy_license
-        framework_copy_resources(os)
-      end
-      frameworks
     end
 
     def build_sim_libraries(defines)
