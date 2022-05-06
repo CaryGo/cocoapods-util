@@ -32,6 +32,10 @@ module Pod
               end
 
               `lipo -create #{fwk_lib} #{other_fwk_lib} -output #{fwk_lib}`
+
+              # copy swiftmodules
+              swiftmodule = Dir.glob("#{other_fwk.fwk_path}/**/#{@spec.name}.swiftmodule").first
+              `cp -rp #{swiftmodule}/ #{fwk.module_map_path}/#{@spec.name}.swiftmodule/` unless swiftmodule.empty?
             end
             `cp -a #{fwk.fwk_path} #{@platform.name.to_s}/`
           end
@@ -77,29 +81,22 @@ module Pod
               module_map_file = @file_accessors.flat_map(&:module_map).first
               module_map = File.read(module_map_file) if Pathname(module_map_file).exist?
             elsif File.exist?("#{@fwk.headers_path}/#{header_name}.h")
-                if swift_headers.count > 0
-                    module_map = <<MAP
+              module_map = <<MAP
 framework module #{@spec.name} {
     umbrella header "#{header_name}.h"
 
     export *
     module * { export * }
 }
+MAP
+              unless swift_headers.empty?
+                module_map << swift_module_map = <<SWIFT_MAP
 module #{@spec.name}.Swift {
     header "#{@spec.name}-Swift.h"
     requires objc
 }
-MAP
-                  else
-                      module_map = <<MAP
-framework module #{@spec.name} {
-    umbrella header "#{header_name}.h"
-
-    export *
-    module * { export * }
-}
-MAP
-                  end
+SWIFT_MAP
+              end
             end
       
             unless module_map.nil?
@@ -112,6 +109,7 @@ MAP
             license_file = @spec.license[:file] || 'LICENSE'
             `cp "#{license_file}" .` if Pathname(license_file).exist?
         end
+
         def framework_copy_resources(build_root = 'build')
             unless @framework_contains_resources
                 # copy resources
