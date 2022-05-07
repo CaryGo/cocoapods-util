@@ -32,7 +32,8 @@ module Pod
                 ['--exclude-archs=armv7s,armv7', '排除特定的架构'],
                 ['--dependency-config={}', '依赖的pod文件配置，为一个json dictionary，可以配置branch、tag、source源等。配置方式：{"PodA":{"git":"xxx","branch":"xxx"},"PodB":{"source":"xxx"}}'],
                 ['--contains-resources', '生成的framework中是否包含bundle文件，默认不把bundle文件放到framework中。'],
-                ['--platforms=ios,osx,watchos,tvos,all', '选择编译的平台架构，默认`all`，编译全部平台。']
+                ['--platforms=ios,osx,watchos,tvos,all', '选择编译的平台架构，默认`all`，编译全部平台。'],
+                ['--build-settings={}', 'xcode build_settings。{"EXCLUDED_ARCHS[sdk=iphonesimulator*]":"arm64"}']
               ]
             end
     
@@ -63,6 +64,7 @@ module Pod
               @exclude_archs = argv.option('exclude-archs', '')
               @framework_contains_resources = argv.flag?('contains-resources', false)
               @platforms = argv.option('platforms', 'all')
+              @build_settings = JSON.parse(argv.option('build-settings', '{}'))
     
               dependency_config = argv.option('dependency-config', '{}')
               @dependency_config = JSON.parse(dependency_config)

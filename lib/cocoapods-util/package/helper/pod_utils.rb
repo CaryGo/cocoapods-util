@@ -25,12 +25,19 @@ module Pod
           static_installer.install!
 
           unless static_installer.nil?
+            # default build settings
+            default_build_settings = Hash.new
+            default_build_settings["CLANG_MODULES_AUTOLINK"] = "NO"
+            # default_build_settings["GCC_GENERATE_DEBUGGING_SYMBOLS"] = "NO" # 设置不生成Debug编译信息
+            default_build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64" unless @xcframework # 非xcframework排除模拟器64位架构
+            default_build_settings["BUILD_LIBRARY_FOR_DISTRIBUTION"] = "YES" # 编译swift生成swiftinterface文件
+            
+            # merge user setting
+            default_build_settings.merge!(@build_settings) unless @build_settings.empty?
+
             static_installer.pods_project.targets.each do |target|
               target.build_configurations.each do |config|
-                config.build_settings['CLANG_MODULES_AUTOLINK'] = 'NO'
-                # config.build_settings['GCC_GENERATE_DEBUGGING_SYMBOLS'] = 'NO'# 设置不生成Debug编译信息
-                config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'# 排除模拟器64位架构
-                config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'# 编译swift生成swiftinterface文件
+                default_build_settings.each { |key, value| config.build_settings[key.to_s] = value.to_s }
               end
             end
             static_installer.pods_project.save
