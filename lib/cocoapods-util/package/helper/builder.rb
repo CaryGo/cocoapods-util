@@ -1,6 +1,6 @@
 module Pod
   class Builder
-    def initialize(platform, static_installer, source_dir, static_sandbox_root, public_headers_root, spec, config, exclude_sim, exclude_archs, framework_contains_resources, verbose)
+    def initialize(platform, static_installer, source_dir, static_sandbox_root, public_headers_root, spec, config, exclude_sim, framework_contains_resources, verbose)
       @platform = platform
       @static_installer = static_installer
       @source_dir = source_dir
@@ -9,7 +9,6 @@ module Pod
       @spec = spec
       @config = config
       @exclude_sim = exclude_sim || @platform.name.to_s == 'osx'
-      @exclude_archs = exclude_archs
       @framework_contains_resources = framework_contains_resources
       @verbose = verbose
 
@@ -78,30 +77,45 @@ module Pod
     end
 
     def build_sim_libraries(defines)
+      options = build_options
       case @platform.name
       when :ios
-        xcodebuild(defines, '-sdk iphonesimulator', 'build-sim')
+        options << ' -sdk iphonesimulator'
       when :watchos
-        xcodebuild(defines, '-sdk watchsimulator', 'build-sim')
+        options << ' -sdk watchsimulator'
       when :tvos
-        xcodebuild(defines, '-sdk appletvsimulator', 'build-sim')
+        options << ' -sdk appletvsimulator'
+      else
+        return
       end
+      xcodebuild(defines, options, 'build-sim')
     end
 
     def compile
       defines = ("" << @spec.consumer(@platform).compiler_flags.join(' '))
 
-      if @platform.name == :ios
-        options = ios_build_options
+      options = build_options
+      case @platform.name
+      when :ios
+        options << ' -sdk iphoneos'
+      when :osx
+        options << ' -sdk macosx'
+      when :watchos
+        options << ' -sdk watchos'
+      when :tvos
+        options << ' -sdk appletvos'
       end
-
       xcodebuild(defines, options)
 
       defines
     end
 
+    def build_options
+      options = ("ARCHS=\'#{vendored_libraries.join(' ')}\'" unless vendored_libraries.empty?) || ""
+      options
+    end
+
     def static_libs_in_sandbox(build_dir = 'build')
-      UI.puts 'Excluding dependencies'
       if build_dir == 'build'
         Dir.glob("#{@static_sandbox_root}/#{build_dir}/**/#{@spec.name}/lib#{@spec.name}.a")
       else
@@ -120,38 +134,10 @@ module Pod
       @vendored_libraries
     end
 
-    def ios_build_options
-      "ARCHS=\'#{ios_architectures.join(' ')}\'"
-    end
-
     def expand_paths(path_specs)
       path_specs.map do |path_spec|
         Dir.glob(File.join(@source_dir, path_spec))
       end
-    end
-
-    def ios_architectures
-      case @platform.name
-      when :ios
-        os_archs = ['arm64', 'armv7', 'armv7s']
-        sim_archs = ['i386', 'x86_64']
-      when :osx
-        os_archs = ['arm64', 'x86_64']
-        sim_archs = []
-      when :watchos
-        os_archs = ['armv7k', 'arm64_32']
-        sim_archs = ['arm64', 'i386', 'x86_64']
-      when :tvos
-        os_archs = ['arm64']
-        sim_archs = ['arm64', 'x86_64']
-      end
-      archs = os_archs
-      archs += sim_archs unless @exclude_sim
-      archs -= @exclude_archs.split(',')
-      vendored_libraries.each do |library|
-        archs = `lipo -info #{library}`.split & archs
-      end
-      archs
     end
 
     def os_build_name(build_root)
