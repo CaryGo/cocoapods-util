@@ -28,8 +28,9 @@ module Pod
             # default build settings
             default_build_settings = Hash.new
             default_build_settings["CLANG_MODULES_AUTOLINK"] = "NO"
-            # default_build_settings["GCC_GENERATE_DEBUGGING_SYMBOLS"] = "NO" # 设置不生成Debug编译信息
-            default_build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64" unless @xcframework # 非xcframework排除模拟器64位架构
+            default_build_settings["GCC_GENERATE_DEBUGGING_SYMBOLS"] = "YES" # 生成Debug编译信息
+            default_build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64" unless @xcframework # 非xcframework排除ios simulator 64位架构
+            default_build_settings["EXCLUDED_ARCHS[sdk=appletvsimulator*]"] = "arm64" unless @xcframework # 非xcframework排除tvos simulator 64位架构
             default_build_settings["BUILD_LIBRARY_FOR_DISTRIBUTION"] = "YES" # 编译swift生成swiftinterface文件
             
             # merge user setting

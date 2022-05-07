@@ -23,18 +23,12 @@ module Pod
             if frameworks.count == 2
               other_fwk = frameworks.last
               other_fwk_lib = "#{other_fwk.versions_path}/#{@spec.name}"
-
-              # check appletv archs
-              if @platform.name.to_s == 'tvos'
-                archs = `lipo -archs #{fwk_lib}`.split
-                remove_archs = `lipo -archs #{other_fwk_lib}`.split & archs    
-                `lipo -remove #{remove_archs.join(' -remove ')} #{other_fwk_lib} -output #{other_fwk_lib}` unless remove_archs.empty?
-              end
-
+              
+              #  create Muti-architecture
               `lipo -create #{fwk_lib} #{other_fwk_lib} -output #{fwk_lib}`
 
               # copy swiftmodules
-              swiftmodule = Dir.glob("#{other_fwk.fwk_path}/**/#{@spec.name}.swiftmodule").first
+              swiftmodule = Dir.glob("#{other_fwk.fwk_path}/**/#{@spec.name}.swiftmodule").first || ''
               `cp -rp #{swiftmodule}/ #{fwk.module_map_path}/#{@spec.name}.swiftmodule/` unless swiftmodule.empty?
             end
             `cp -a #{fwk.fwk_path} #{@platform.name.to_s}/`

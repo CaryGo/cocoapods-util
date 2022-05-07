@@ -11,25 +11,12 @@ module Pod
         end
 
         def generate_static_library
-            os_static_libs = static_libs_in_sandbox('build')
-            sim_static_libs = []
-            sim_static_libs += static_libs_in_sandbox('build-sim') unless @exclude_sim
+            static_libs = static_libs_in_sandbox('build')
+            static_libs += static_libs_in_sandbox('build-sim') unless @exclude_sim
 
-            # check appletv archs
-            if @platform.name.to_s == 'tvos'
-                archs = []
-                os_static_libs.each { |lib|
-                    archs += `lipo -archs #{lib}`.split
-                    archs.uniq!
-                }
-                sim_static_libs.each { |lib| 
-                    remove_archs = `lipo -archs #{lib}`.split & archs
-                    `lipo -remove #{remove_archs.join(' -remove ')} #{lib} -output #{lib}` unless remove_archs.empty?
-                }
-            end
-
+            # create Muti-architecture
             output = @library_platform_path + "lib#{@spec.name}.a"
-            `lipo -create -output #{output} #{os_static_libs.join(' ')} #{sim_static_libs.join(' ')}`
+            `lipo -create -output #{output} #{static_libs.join(' ')}`
         end
 
         def library_copy_headers
@@ -41,6 +28,7 @@ module Pod
                 headers.each { |h| `ditto #{h} #{headers_path}/#{h.sub(headers_source_root, '')}` }
             end
         end
+
         def library_copy_resources(build_root = 'build')
             bundles = Dir.glob("#{@static_sandbox_root}/#{build_root}/#{os_build_name('build')}/#{@spec.name}/*.bundle")
             resources = expand_paths(@spec.consumer(@platform).resources)
