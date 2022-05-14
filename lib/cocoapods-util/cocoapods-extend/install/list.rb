@@ -22,7 +22,7 @@ module Pod
               @lockfile_path = argv.shift_argument
               @name = argv.option('name')
               @all_componment = argv.flag?('all', true) && (@name.nil? || @name.empty?)
-              @showmore = argv.flag?('showmore', false)
+              @showmore = argv.flag?('showmore', false) || @name
               super
             end
   
@@ -41,71 +41,87 @@ module Pod
               if @all_componment
                 check_all_componment
               else
-                dependencys = @lockfile.internal_data["DEPENDENCIES"].compact
-                dependencys.select! {|item|
-                  item =~ /^#{@name}.*$/
-                }
-                help! "没有找到#{@name}组件的相关信息，请检查输入的组件名称" if dependencys.empty?
-                tag_info = check_componment_with_name(@name)
-                UI.puts "1).".red " #{dependencys.first} ".green "#{tag_info}".yellow
-                if @showmore
-                  repo_name = check_repos(@name)
-                  UI.puts "   - SPEC REPO: #{repo_name}".green unless repo_name.nil?
-                end
+                installed = pod_installed
+                help! "没有找到#{@name}组件的相关信息，请检查输入的组件名称" unless installed.include?(@name)
+                check_componment_with_name(@name)
               end
             end
 
             private
             def check_all_componment
-              internal_data = @lockfile.internal_data
-              dependencys = internal_data["DEPENDENCIES"]
-              dependencys.each_index {|index|
-                name = dependencys[index]
-                tag_info = check_componment_with_name(name)
-                UI.puts "#{index+1}).".red " #{name} ".green "#{tag_info}".yellow
-                if @showmore
-                  repo_name = check_repos(name)
-                  UI.puts "   - SPEC REPO: #{repo_name}".green unless repo_name.nil?
-                end
-              }
+              installed = pod_installed
+              installed.each_index do |index|
+                name = installed[index]
+                check_componment_with_name(name, index+1)
+              end
             end
 
-            def check_componment_with_name(name)
-              name = name.split(' ').first
-              tag = nil
-              @lockfile.internal_data["PODS"].each {|item|
-                if item.is_a?(Hash)
-                  item.each_key {|key|
-                    if key =~ /^#{name}\s+\([^\)]*\)$/
-                      tag = key.gsub(/^#{name}\s+/, '')
-                      break
+            def check_componment_with_name(name, index=1)
+              internal_data = @lockfile.internal_data
+              internal_data["PODS"].each do |item|
+                info = item.keys.first if item.is_a?(Hash) && item.count == 1
+                info = item if item.is_a?(String)
+                if info =~ /^#{name}[^\/]*$/
+                  tag = info.match(/\(.*\)/) || ''
+                  UI.puts "#{index}).".red " #{name} ".green "#{tag}".yellow
+                  
+                  # repo spec
+                  repo_name = pod_spec_repos[name]
+                  UI.puts "   - SPEC REPO: ".yellow "#{repo_name}".green unless repo_name.nil?
+                  
+                  # external sources
+                  external = internal_data['EXTERNAL SOURCES'][name]
+                  external.each { |key, value| UI.puts "   - #{key}: ".yellow "#{value}".green } unless external.nil?
+
+                  show_moreinfo(name) if @showmore
+                  break
+                end
+              end
+            end
+
+            def show_moreinfo(name)
+              subspecs = Array.new
+              dependencies = Array.new
+              @lockfile.internal_data["PODS"].each { |item|
+                info = item.keys.first if item.is_a?(Hash) && item.count == 1
+                info = item if item.is_a?(String)
+                if info =~ /^#{name}.*$/
+                  subspecs.push(info.match(/^[^\s]*/)) if info =~ /^#{name}\/.*$/
+                  if item.is_a?(Hash)
+                    item.each_value do |value| 
+                      value.each {|dependency| dependencies.push(dependency.to_s) unless dependency =~ /^#{name}/ }
                     end
-                  }
-                elsif item.is_a?(String)
-                  if item =~ /^#{name}\s+\([^\)]*\)$/
-                    tag = item.gsub(/^#{name}\s+/, '')
+                  elsif item.is_a?(String)
+                    dependencies.push(item.to_s) unless item =~ /^#{name}/
                   end
                 end
-                break unless tag.nil?
               }
-              tag
+              subspecs.uniq!
+              dependencies.uniq!
+              UI.puts "   - SUBSPEC: ".yellow "#{subspecs.join('、')}".green unless subspecs.empty?
+              UI.puts "   - DEPENDENCIES: ".yellow "#{dependencies.join('、')}".green unless dependencies.empty?
             end
 
-            def check_repos(name)
-              name = name.split(' ').first
-              repo_name = nil
-              @lockfile.internal_data["SPEC REPOS"].each {|key, value|
-                if value.is_a?(Array)
-                  value.each {|item|
-                    if item == "#{name}"
-                      repo_name = key
-                      break
-                    end
-                  }
-                end
-                break unless repo_name.nil?
-              }
-              repo_name
+            def pod_installed
+              if @installed
+                return @installed                  
+              end
+              @installed = Array.new
+              @lockfile.internal_data["SPEC CHECKSUMS"].each_key do |item|
+                @installed.push(item)
+              end
+              @installed
+            end
+
+            def pod_spec_repos
+              if @spec_repos
+                return @spec_repos                
+              end
+              @spec_repos = Hash.new
+              @lockfile.internal_data["SPEC REPOS"].each do |key, value|
+                value.each {|item| @spec_repos[item] = key } if value.is_a?(Array)
+              end
+              @spec_repos
             end
           end
         end
