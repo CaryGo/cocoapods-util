@@ -57,26 +57,19 @@ module Pod
             end
 
             def check_componment_with_name(name, index=1)
-              internal_data = @lockfile.internal_data
-              internal_data["PODS"].each do |item|
-                info = item.keys.first if item.is_a?(Hash) && item.count == 1
-                info = item if item.is_a?(String)
-                if info =~ /^#{name}[^\/]*$/
-                  tag = info.match(/\(.*\)/) || ''
-                  UI.puts "#{index}).".red " #{name} ".green "#{tag}".yellow
-                  
-                  # repo spec
-                  repo_name = pod_spec_repos[name]
-                  UI.puts "   - SPEC REPO: ".yellow "#{repo_name}".green unless repo_name.nil?
-                  
-                  # external sources
-                  external = internal_data['EXTERNAL SOURCES'][name]
-                  external.each { |key, value| UI.puts "   - #{key}: ".yellow "#{value}".green } unless external.nil?
+              tags_info = pod_tags_info
+              UI.puts "#{index}).".red " #{name} ".green "#{tags_info[name]}".yellow
+              
+              # repo spec
+              repo_name = pod_spec_repos[name]
+              UI.puts "   - SPEC REPO: ".yellow "#{repo_name}".green unless repo_name.nil?
+              
+              # external sources
+              external = @lockfile.internal_data['EXTERNAL SOURCES'][name]
+              external.each { |key, value| UI.puts "   - #{key}: ".yellow "#{value}".green } unless external.nil?
 
-                  show_moreinfo(name) if @showmore
-                  break
-                end
-              end
+              # subspecs、dependencies
+              show_moreinfo(name) if @showmore
             end
 
             def show_moreinfo(name)
@@ -100,6 +93,23 @@ module Pod
               dependencies.uniq!
               UI.puts "   - SUBSPEC: ".yellow "#{subspecs.join('、')}".green unless subspecs.empty?
               UI.puts "   - DEPENDENCIES: ".yellow "#{dependencies.join('、')}".green unless dependencies.empty?
+            end
+
+            def pod_tags_info
+              if @tags_info
+                return @tags_info
+              end
+              @tags_info = Hash.new
+              @lockfile.internal_data["PODS"].each do |item|
+                info = item.keys.first if item.is_a?(Hash) && item.count == 1
+                info = item if item.is_a?(String)
+                if info =~ /^[^\/]*$/
+                  name = info.match(/^[^\/\s]*/)
+                  tag = info.match(/\(.*\)/) || ''
+                  @tags_info[name.to_s] = tag.to_s
+                end
+              end
+              @tags_info
             end
 
             def pod_installed
