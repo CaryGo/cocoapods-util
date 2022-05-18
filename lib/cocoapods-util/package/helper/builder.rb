@@ -114,7 +114,7 @@ module Pod
       vendored_archs = []
       vendored_libraries.each do |library|
         vendored_archs = vendored_archs | `lipo -archs #{library}`.split
-        puts "#{library}  #{vendored_archs}"
+        UI.puts "library at #{library}, archs: #{vendored_archs}" if @verbose
       end
       options = ("ARCHS=\'#{vendored_archs.join(' ')}\'" unless vendored_archs.empty?) || ""
       options
