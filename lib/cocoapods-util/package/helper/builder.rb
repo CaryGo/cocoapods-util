@@ -111,7 +111,12 @@ module Pod
     end
 
     def build_options
-      options = ("ARCHS=\'#{vendored_libraries.join(' ')}\'" unless vendored_libraries.empty?) || ""
+      vendored_archs = []
+      vendored_libraries.each do |library|
+        vendored_archs = vendored_archs | `lipo -archs #{library}`.split
+        puts "#{library}  #{vendored_archs}"
+      end
+      options = ("ARCHS=\'#{vendored_archs.join(' ')}\'" unless vendored_archs.empty?) || ""
       options
     end
 
