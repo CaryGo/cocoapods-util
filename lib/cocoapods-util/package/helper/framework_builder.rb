@@ -10,7 +10,11 @@ module Pod
               framework_build_static_library(os)
               framework_copy_headers(os)
               framework_copy_license
-              framework_copy_resources(os)
+              if @framework_contains_resources
+                framework_copy_resources(os)
+              else
+                framework_copy_resources(os) if os = 'build'
+              end
             end
             frameworks
         end
