@@ -1,6 +1,6 @@
-require 'cocoapods-util/package/helper/pod_utils'
-require 'cocoapods-util/package/helper/builder'
-require 'cocoapods-util/package/helper/framework'
+require_relative 'helper/pod_utils'
+require_relative 'helper/builder'
+require_relative 'helper/framework'
 
 require 'tmpdir'
 require 'json'

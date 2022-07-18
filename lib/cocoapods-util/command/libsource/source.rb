@@ -1,4 +1,4 @@
-require 'cocoapods-util/libsource/source_linker.rb'
+require_relative 'source_linker.rb'
 
 module Pod
     class Command

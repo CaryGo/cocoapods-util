@@ -1,4 +1,4 @@
-require 'cocoapods-util/xcframework/xcramework_build.rb'
+require_relative 'xcframework_build.rb'
 
 module Pod
     class Command

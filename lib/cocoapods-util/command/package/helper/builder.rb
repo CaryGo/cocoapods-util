@@ -16,8 +16,8 @@ module Pod
     end
 
     def build(package_type)
-      require 'cocoapods-util/package/helper/framework_builder.rb'
-      require 'cocoapods-util/package/helper/library_builder.rb'
+      require_relative 'framework_builder.rb'
+      require_relative 'library_builder.rb'
 
       case package_type
       when :static_library
@@ -56,7 +56,7 @@ module Pod
     end
 
     def build_static_xcframework
-      require 'cocoapods-util/xcframework/xcramework_build.rb'
+      require_relative '../../xcframework/xcframework_build.rb'
       UI.puts("Building #{@platform.name.to_s} static framework #{@spec} with configuration #{@config}")
 
       defines = compile

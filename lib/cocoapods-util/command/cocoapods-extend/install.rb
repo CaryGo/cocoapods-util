@@ -1,4 +1,4 @@
-require 'cocoapods-util/cocoapods-extend/install/list'
+require_relative 'install/list'
 module Pod
     class Command
       class Util < Command

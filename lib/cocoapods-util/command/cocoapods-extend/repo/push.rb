@@ -9,7 +9,7 @@ module Pod
           DESC
           self.arguments = Pod::Command::Repo::Push.arguments
           def self.options
-            require 'cocoapods-util/cocoapods-extend/repo/push_helper'
+            require_relative 'push_helper'
             Pod::Command::Repo::Push.options
           end
 
@@ -26,7 +26,7 @@ module Pod
           end
 
           def run
-            require 'cocoapods-util/cocoapods-extend/repo/push_helper'
+            require_relative 'push_helper'
             
             @target = Pod::Command::Repo::Push.new(CLAide::ARGV.new(@argvs))
             @target.validate!

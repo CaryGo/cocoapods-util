@@ -1,8 +1,7 @@
-require 'cocoapods-util/package/package'
-require 'cocoapods-util/xcframework/xcframework'
-require 'cocoapods-util/libsource/source'
-
-require 'cocoapods-util/cocoapods-extend/extend'
+require_relative 'package/package'
+require_relative 'xcframework/xcframework'
+require_relative 'libsource/source'
+require_relative 'cocoapods-extend/extend'
 
 module Pod
   class Command
