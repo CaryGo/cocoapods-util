@@ -65,21 +65,25 @@ module Pod
               UI.puts "   - SPEC REPO: ".yellow "#{repo_name}".green unless repo_name.nil?
               
               # external sources
-              external = @lockfile.internal_data['EXTERNAL SOURCES'][name]
-              external.each { |key, value| UI.puts "   - #{key}: ".yellow "#{value}".green } unless external.nil?
+              external_dict = @lockfile.internal_data['EXTERNAL SOURCES']
+              unless external_dict.nil?
+                external = external_dict[name]
+                external.each { |key, value| UI.puts "   - #{key}: ".yellow "#{value}".green } unless external.nil?
+              end
 
-              # subspecs、dependencies
+              # subspecs、dependencies、parents
               show_moreinfo(name) if @showmore
             end
 
             def show_moreinfo(name)
-              subspecs = Array.new
-              dependencies = Array.new
+              subspecs = []
+              dependencies = []
+              parents = Array.new
               @lockfile.internal_data["PODS"].each { |item|
-                info = item.keys.first if item.is_a?(Hash) && item.count == 1
-                info = item if item.is_a?(String)
-                if info =~ /^#{name}.*$/
-                  subspecs.push(info.match(/^[^\s]*/)) if info =~ /^#{name}\/.*$/
+                pod_name = item.keys.first if item.is_a?(Hash) && item.count == 1
+                pod_name = item if item.is_a?(String)
+                if pod_name =~ /^#{name}.*$/
+                  subspecs.push(pod_name.match(/^[^\s]*/).to_s) if pod_name =~ /^#{name}\/.*$/
                   if item.is_a?(Hash)
                     item.each_value do |value| 
                       value.each {|dependency| dependencies.push(dependency.to_s) unless dependency =~ /^#{name}/ }
@@ -87,12 +91,21 @@ module Pod
                   elsif item.is_a?(String)
                     dependencies.push(item.to_s) unless item =~ /^#{name}/
                   end
+                else
+                  next if pod_name.nil?
+                  if item.is_a?(Hash)
+                    item.each_value do |value|
+                      value.each {|dependency| parents.push(pod_name.match(/^[^\s\/]*/).to_s) if dependency =~ /^#{name}/ }
+                    end
+                  end
                 end
               }
               subspecs.uniq!
               dependencies.uniq!
+              parents.uniq!
               UI.puts "   - SUBSPEC: ".yellow "#{subspecs.join('、')}".green unless subspecs.empty?
               UI.puts "   - DEPENDENCIES: ".yellow "#{dependencies.join('、')}".green unless dependencies.empty?
+              UI.puts "   - PARENTS: ".yellow "#{parents.join('、')}".green unless parents.empty?
             end
 
             def pod_tags_info
