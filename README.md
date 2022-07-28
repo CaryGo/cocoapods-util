@@ -12,7 +12,7 @@ $ gem install cocoapods-util
 $ pod util --help
 ```
 
-![fde10974894037fe52660a72e4057929.png](:/b79a26336903484ca5aa52a17cd0fe5d)
+![fde10974894037fe52660a72e4057929.png](./assets/fde10974894037fe52660a72e4057929.png)
 
 # 功能
 
@@ -32,7 +32,7 @@ $ pod util --help
 $ pod util package --help
 ```
 
-![74dd1a40ffa3af3744fdf79384fdebdb.png](:/dae2740afb4d486886f03f1be761d490)
+![74dd1a40ffa3af3744fdf79384fdebdb.png](./assets/74dd1a40ffa3af3744fdf79384fdebdb.png)
 
 ### 示例
 
@@ -48,7 +48,7 @@ $ pod util package AFNetworking.podspec --force --local --framework
 $ pod util package AFNetworking.podspec --force --local --library
 ```
 
-![d5410dda08a99ee977dd6ca8af98ef74.png](:/f6f3aab96210432eb4fa2b63f6452728)
+![d5410dda08a99ee977dd6ca8af98ef74.png](./assets/d5410dda08a99ee977dd6ca8af98ef74.png)
 
 #### 排除模拟器
 
@@ -104,7 +104,7 @@ $ --dependency-config='{"PodA":{"git":"xxx","branch":"xxx"},"PodB":{"source":"xx
 
 - 内部可以判断是某个平台的framework（如ios、osx、watchos），直接在framework同级目录生成xcframework。
 
-![132d6cec7bc64488deca731d37438cdd.png](:/1b1d92444fb246958c8b9b1570d399c7)
+![132d6cec7bc64488deca731d37438cdd.png](./assets/132d6cec7bc64488deca731d37438cdd.png)
 
 ### 示例
 
@@ -114,9 +114,9 @@ $ --dependency-config='{"PodA":{"git":"xxx","branch":"xxx"},"PodB":{"source":"xx
 $ pod util xcframework Alamofire.framework --force 
 ```
 
-![e32ea9af2dfae1e3d6b03f0278c33057.png](:/a1ce528418ae417fb89ca8774e80b55e)
+![e32ea9af2dfae1e3d6b03f0278c33057.png](./assets/e32ea9af2dfae1e3d6b03f0278c33057.png)
 
-![23332974a4941bae97010afb4b4d4c1c.png](:/b5cab59f497f4f1eb8333723fcb4e78f)
+![23332974a4941bae97010afb4b4d4c1c.png](./assets/23332974a4941bae97010afb4b4d4c1c.png)
 
 ## linksource
 
@@ -126,7 +126,7 @@ $ pod util xcframework Alamofire.framework --force
 $ pod util linksource --help
 ```
 
-![b605570c681e5d7877f08458cfd1dbc7.png](:/41b6ddce3bd54939b27e25eac718b0d8)
+![b605570c681e5d7877f08458cfd1dbc7.png](./assets/b605570c681e5d7877f08458cfd1dbc7.png)
 
 ## repo push
 
@@ -138,7 +138,7 @@ $ pod util linksource --help
 $ pod util repo push --help
 ```
 
-![2947331da6ee0c269dbd6ea073d15d4e.png](:/acdfa5cd918d4d4eb0317888a92bf119)
+![2947331da6ee0c269dbd6ea073d15d4e.png](./assets/2947331da6ee0c269dbd6ea073d15d4e.png)
 
 该命令是一个提效命令，在推送自己私有仓库的时候可以通过设置--skip-validate选项跳过验证直接推送到私有仓库。
 
@@ -159,7 +159,7 @@ $ pod util repo push [yourSpecs] [xxx.podspec] --skip-validate
 $ pod util install list --help
 ```
 
-![f839eae390ea7871a5afecec093dd39c.png](:/9a2bce2aa1db4794a8e72a51e0d97f73)
+![f839eae390ea7871a5afecec093dd39c.png](./assets/f839eae390ea7871a5afecec093dd39c.png)
 
 可以在Podfile.lock的同级目录下执行或指定Podfile.lock的路径
 
@@ -168,4 +168,4 @@ $ pod util install list --showmore
 $ pod util install list ~/Desktop/xxxx/ProjectA/Podfile.lock --showmore
 ```
 
-![3be13cd62a8450a7c8b2a3fa728984c6.png](:/72b1fb686c15458e951460b20b74f845)
+![3be13cd62a8450a7c8b2a3fa728984c6.png](./assets/3be13cd62a8450a7c8b2a3fa728984c6.png)
