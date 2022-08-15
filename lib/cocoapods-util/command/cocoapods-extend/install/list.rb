@@ -8,7 +8,7 @@ module Pod
             self.summary = '列出pod install安装的组件信息，Podfile.lock不传则在当前目录查找'
             self.command = 'list'
             self.arguments = [
-              CLAide::Argument.new('Podfile.lock', false)
+              CLAide::Argument.new('Podfile.lock', true)
             ]
             def self.options
               [
@@ -105,7 +105,7 @@ module Pod
               parents.uniq!
               UI.puts "   - SUBSPEC: ".yellow "#{subspecs.join('、')}".green unless subspecs.empty?
               UI.puts "   - DEPENDENCIES: ".yellow "#{dependencies.join('、')}".green unless dependencies.empty?
-              UI.puts "   - PARENTS: ".yellow "#{parents.join('、')}".green unless parents.empty?
+              UI.puts "   - DEPENDENTS: ".yellow "#{parents.join('、')}".green unless parents.empty?
             end
 
             def pod_tags_info
