@@ -10,7 +10,7 @@ module Pod
       self.description = <<-DESC
       一个CocoaPods常用插件功能的集合，解决日常开发中遇到的一些问题。
       DESC
-      self.command == 'util'
+      self.command = 'util'
       self.abstract_command = true
       def initialize(argv)
         super

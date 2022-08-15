@@ -7,7 +7,7 @@ module Pod
             self.description = <<-DESC
             操作cocoapods的私有repo。如`pod util repo push`推送到私有仓库（可以设置参数跳过验证）
             DESC
-            self.command == 'repo'
+            self.command = 'repo'
             self.abstract_command = true
       end
     end
