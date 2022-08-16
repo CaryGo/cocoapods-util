@@ -1,5 +1,3 @@
-require 'cocoapods/config'
-
 module Pod
     class Command
       class Util < Command

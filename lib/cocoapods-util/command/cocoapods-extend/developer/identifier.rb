@@ -3,7 +3,7 @@ module Pod
       class Util < Command
         class Developer < Util
           class Identifier < Developer
-            self.summary = '列出本机安装的所有有效证书信息'
+            self.summary = '列出本机安装的所有codesigning有效证书信息'
             self.command = 'identifier'
             self.arguments = [
             ]

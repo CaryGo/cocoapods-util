@@ -56,19 +56,22 @@ module Pod
                 path = Pathname.new(@profile_path)
                 FileUtils.chdir(path)
 
-                index = 1
+                index = 0
                 Dir.glob("*.mobileprovision").each do |file|
-                    pp_name = print_pp_info("Name", file)
-                    pp_identifier = print_pp_info("Entitlements:application-identifier", file)
-                    pp_uuid = print_pp_info("UUID", file)
-                    UI.puts "#{index})".red " #{pp_name}".blue " #{pp_identifier}".yellow
                     index += 1
+                    UI.puts "#{index})".red " #{print_pp_info("Name", file)}".green
+
+                    UI.puts "   application-identifier: ".yellow "#{print_pp_info("Entitlements:application-identifier", file)}".green
+                    UI.puts "   UUID: ".yellow "#{print_pp_info("UUID", file) || ''}".green
+                    UI.puts "   TeamName: ".yellow "#{print_pp_info("TeamName", file)}".green
+                    UI.puts "   CreationDate: ".yellow "#{print_pp_info("CreationDate", file)}".green
+                    UI.puts "   ExpirationDate: ".yellow "#{print_pp_info("ExpirationDate", file)}".green
                 end
             end
             
             def print_pp_info(name, file)
                 command = "/usr/libexec/PlistBuddy -c 'Print :#{name}' /dev/stdin <<< $(security cms -D -u 11 -i #{file})"
-                `#{command}`.lines.to_a.first.strip!
+                `#{command}`.lines.to_a.first.strip! || ''
             end
 
           end
