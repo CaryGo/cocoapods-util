@@ -13,7 +13,7 @@ module Pod
               if @framework_contains_resources
                 framework_copy_resources(os)
               else
-                framework_copy_resources(os) if os = 'build'
+                framework_copy_resources(os) if os == 'build'
               end
             end
             frameworks
