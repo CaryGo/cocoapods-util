@@ -26,7 +26,7 @@ module Pod
 
       def validate!
         if @version
-          require 'cocoapods-util/gem_version'
+          require 'cocoapods-util/gem_version.rb'
           puts "#{CocoapodsUtil::VERSION}"
           return
         end
