@@ -12,11 +12,24 @@ module Pod
       DESC
       self.command = 'util'
       self.abstract_command = true
+
+      def self.options
+        [
+          ['--version', 'Show cocoapods-util version'],
+        ].concat(super)
+      end
+
       def initialize(argv)
+        @version = argv.flag?('version', false)
         super
       end
 
       def validate!
+        if @version
+          require 'cocoapods-util/gem_version'
+          puts "#{CocoapodsUtil::VERSION}"
+          return
+        end
         super
       end
 
