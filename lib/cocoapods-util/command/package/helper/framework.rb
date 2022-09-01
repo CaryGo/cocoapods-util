@@ -8,20 +8,21 @@ module Framework
     attr_reader :fwk_path
 
     def delete_resources
-      Pathname.new(@resources_path).rmtree
-      (Pathname.new(@fwk_path) + Pathname.new('Resources')).delete
+      Pathname.new(@resources_path).rmtree @contains_resources
+      (Pathname.new(@fwk_path) + Pathname.new('Resources')).delete @contains_resources
     end
 
-    def initialize(name, platform)
+    def initialize(name, platform, contains_resources=false)
       @name = name
       @platform = platform
+      @contains_resources = contains_resources
     end
 
     def make
       make_root
       make_framework
       make_headers
-      make_resources
+      make_resources if @contains_resources
       make_current_version
     end
 
@@ -31,7 +32,7 @@ module Framework
       current_version_path = @versions_path + Pathname.new('../Current')
       `ln -sf A #{current_version_path}`
       `ln -sf Versions/Current/Headers #{@fwk_path}/`
-      `ln -sf Versions/Current/Resources #{@fwk_path}/`
+      `ln -sf Versions/Current/Resources #{@fwk_path}/` if @contains_resources
       `ln -sf Versions/Current/#{@name} #{@fwk_path}/`
     end
 

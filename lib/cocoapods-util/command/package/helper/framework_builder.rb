@@ -40,7 +40,7 @@ module Pod
         end
 
         def create_framework(os_name = '')
-            @fwk = Framework::Tree.new(@spec.name, "#{@platform.name.to_s}/#{os_name}")
+            @fwk = Framework::Tree.new(@spec.name, "#{@platform.name.to_s}/#{os_name}", @framework_contains_resources)
             @fwk.make
             @fwk
         end
@@ -126,9 +126,6 @@ SWIFT_MAP
                     `cp -rp #{resources.join(' ')} #{resources_path}`
                   end
                 end
-        
-                # delete framework resources
-                @fwk.delete_resources if @fwk
                 return
             end
     
