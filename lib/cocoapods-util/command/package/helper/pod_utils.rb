@@ -32,6 +32,7 @@ module Pod
             default_build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64" unless @xcframework && self.match_pod_version?('~> 1.11') # 非xcframework排除ios simulator 64位架构
             default_build_settings["EXCLUDED_ARCHS[sdk=appletvsimulator*]"] = "arm64" unless @xcframework && self.match_pod_version?('~> 1.11') # 非xcframework排除tvos simulator 64位架构
             default_build_settings["BUILD_LIBRARY_FOR_DISTRIBUTION"] = "YES" # 编译swift生成swiftinterface文件
+            default_build_settings["CODE_SIGN_IDENTITY"] = "" if `xcodebuild -version`.lines.shift.gsub!('Xcode ', '') >= "14" #xcode版本大于等于xcode 14时需要添加
             
             # merge user setting
             default_build_settings.merge!(@build_settings) unless @build_settings.empty?
