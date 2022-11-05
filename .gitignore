@@ -2,3 +2,6 @@
 pkg
 .idea/
 .vscode/
+*.xcuserstate
+IDEWorkspaceChecks.plist
+xcuserdata

@@ -1,0 +1,22 @@
+# Uncomment the next line to define a global platform for your project
+# platform :ios, '9.0'
+source 'https://github.com/CocoaPods/Specs.git'
+
+# use_frameworks! :linkage=>:static
+
+#plugin 'cocoapods-binary'
+#plugin 'cocoapods-binary'
+
+plugin 'cocoapods-util'
+
+target 'BinaryTest' do
+  #oc
+  pod 'AFNetworking'
+  #swift
+  pod 'Alamofire'
+
+  # framework
+  pod 'Bugly'
+  # library
+  pod 'WechatOpenSDK'
+end

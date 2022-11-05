@@ -1,19 +1,10 @@
-class Module
-    def strong_alias(to, from)
-      # https://tieba.baidu.com/p/5535445605?red_tag=0735709674  贴吧大神给出的方案
-      # 类方法可以看做singleton class（单例类）的实例方法，下面两个方法都可以，上面这个方式也适用于早起的ruby版本
-      (class << self;self;end).send(:alias_method, to, from)
-      # self.singleton_class.send(:alias_method, to, from)
-    end
-end
-
 module Pod
     class Command
       class Repo < Command
         class Push < Repo
             attr_accessor :skip_validate
-
-            self.strong_alias(:old_options, :options)
+            
+            class_alias_method(:old_options, :options)
             def self.options
               [
                 ['--skip-validate', '跳过验证，不验证推送的podspec文件，默认为验证']

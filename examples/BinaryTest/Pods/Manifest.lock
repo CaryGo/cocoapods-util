@@ -1,0 +1,42 @@
+PODS:
+  - AFNetworking (4.0.1):
+    - AFNetworking/NSURLSession (= 4.0.1)
+    - AFNetworking/Reachability (= 4.0.1)
+    - AFNetworking/Security (= 4.0.1)
+    - AFNetworking/Serialization (= 4.0.1)
+    - AFNetworking/UIKit (= 4.0.1)
+  - AFNetworking/NSURLSession (4.0.1):
+    - AFNetworking/Reachability
+    - AFNetworking/Security
+    - AFNetworking/Serialization
+  - AFNetworking/Reachability (4.0.1)
+  - AFNetworking/Security (4.0.1)
+  - AFNetworking/Serialization (4.0.1)
+  - AFNetworking/UIKit (4.0.1):
+    - AFNetworking/NSURLSession
+  - Alamofire (5.6.2)
+  - Bugly (2.5.93)
+  - WechatOpenSDK (1.9.7)
+
+DEPENDENCIES:
+  - AFNetworking
+  - Alamofire
+  - Bugly
+  - WechatOpenSDK
+
+SPEC REPOS:
+  https://github.com/CocoaPods/Specs.git:
+    - AFNetworking
+    - Alamofire
+    - Bugly
+    - WechatOpenSDK
+
+SPEC CHECKSUMS:
+  AFNetworking: 7864c38297c79aaca1500c33288e429c3451fdce
+  Alamofire: d368e1ff8a298e6dde360e35a3e68e6c610e7204
+  Bugly: b8715e6ec4004b7f7fbffab0643ba80545aee3da
+  WechatOpenSDK: 2f0ae448c7525cb5c27db5f7aa0f568de0988fa4
+
+PODFILE CHECKSUM: b0fd4ee8a5c7c03b103f57a9a7cef5c13039ddc8
+
+COCOAPODS: 1.11.3
