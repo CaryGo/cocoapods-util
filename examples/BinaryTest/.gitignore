@@ -1,0 +1,9 @@
+.DS_Store
+pkg
+.idea/
+.vscode/
+*.xcuserstate
+IDEWorkspaceChecks.plist
+xcuserdata
+xcschememanagement.plist
+_Prebuild/

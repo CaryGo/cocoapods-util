@@ -44,6 +44,9 @@ module CocoapodsUtilHook
         binary_installer.update = update
         binary_installer.repo_update = repo_update
         binary_installer.install!
+
+        # reset switches setting
+        Pod.is_prebuild_stage = false
     end
     Pod::HooksManager.register('cocoapods-util', :pre_integrate) do |context, _|
         puts "pre_integrate"

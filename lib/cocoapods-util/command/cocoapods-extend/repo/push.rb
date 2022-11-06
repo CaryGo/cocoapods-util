@@ -15,6 +15,7 @@ module Pod
 
           def initialize(argv)
             @skip_validate = argv.flag?('skip-validate', false)
+            @skip_build = argv.flag?('skip-build', false)
             super
             @argvs = argv.remainder!
 
@@ -31,6 +32,7 @@ module Pod
             @target = Pod::Command::Repo::Push.new(CLAide::ARGV.new(@argvs))
             @target.validate!
             @target.skip_validate = @skip_validate
+            @target.skip_build = @skip_build
             @target.run
           end
         end
