@@ -42,5 +42,13 @@ module Pod
     def test_pod
       old_test_pod unless Pod::Validator.skip_build
     end
+
+    alias_method :old_validated?, :validated?
+    def validated?
+      if Pod::Validator.skip_build
+        return true
+      end
+      old_validated?
+    end
   end
 end
