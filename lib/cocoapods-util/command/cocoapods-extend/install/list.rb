@@ -101,9 +101,9 @@ module Pod
               subspecs.uniq!
               dependencies.uniq!
               parents.uniq!
-              UI.puts "   - SUBSPEC: ".yellow "#{subspecs.join('、')}".green unless subspecs.empty?
+              UI.puts "   - SUBSPECS: ".yellow "#{subspecs.join('、')}".green unless subspecs.empty?
               UI.puts "   - DEPENDENCIES: ".yellow "#{dependencies.join('、')}".green unless dependencies.empty?
-              UI.puts "   - DEPENDENTS: ".yellow "#{parents.join('、')}".green unless parents.empty?
+              UI.puts "   - WHO DEPENDS ON IT: ".yellow "#{parents.join('、')}".green unless parents.empty?
             end
 
             def pod_tags_info
