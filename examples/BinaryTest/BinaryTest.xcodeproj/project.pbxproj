@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		44673DFAB4E0B40073104117 /* libPods-BinaryTest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 91ADBD4A9FFC57FA49F8CF45 /* libPods-BinaryTest.a */; };
 		4A2CC9C52915130400C23E71 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 4A2CC9C42915130400C23E71 /* AppDelegate.m */; };
 		4A2CC9C82915130400C23E71 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 4A2CC9C72915130400C23E71 /* SceneDelegate.m */; };
 		4A2CC9CB2915130400C23E71 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4A2CC9CA2915130400C23E71 /* ViewController.m */; };
@@ -15,6 +14,8 @@
 		4A2CC9D02915130500C23E71 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4A2CC9CF2915130500C23E71 /* Assets.xcassets */; };
 		4A2CC9D32915130500C23E71 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4A2CC9D12915130500C23E71 /* LaunchScreen.storyboard */; };
 		4A2CC9D62915130500C23E71 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 4A2CC9D52915130500C23E71 /* main.m */; };
+		4AE289DF2923A23900371E79 /* AAA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE289DE2923A23900371E79 /* AAA.swift */; };
+		FAB4FFEF99F11C7CEED98E46 /* Pods_BinaryTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 53E179C9E6FEFE0E7CB6C8AA /* Pods_BinaryTest.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,7 +31,9 @@
 		4A2CC9D22915130500C23E71 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		4A2CC9D42915130500C23E71 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4A2CC9D52915130500C23E71 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		91ADBD4A9FFC57FA49F8CF45 /* libPods-BinaryTest.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-BinaryTest.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4AE289DD2923A23800371E79 /* BinaryTest-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "BinaryTest-Bridging-Header.h"; sourceTree = "<group>"; };
+		4AE289DE2923A23900371E79 /* AAA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AAA.swift; sourceTree = "<group>"; };
+		53E179C9E6FEFE0E7CB6C8AA /* Pods_BinaryTest.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_BinaryTest.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC208BFF29A9B8C738A6AD37 /* Pods-BinaryTest.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BinaryTest.debug.xcconfig"; path = "Target Support Files/Pods-BinaryTest/Pods-BinaryTest.debug.xcconfig"; sourceTree = "<group>"; };
 		BF02948860EF1C60E04930EE /* Pods-BinaryTest.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BinaryTest.release.xcconfig"; path = "Target Support Files/Pods-BinaryTest/Pods-BinaryTest.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -40,7 +43,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				44673DFAB4E0B40073104117 /* libPods-BinaryTest.a in Frameworks */,
+				FAB4FFEF99F11C7CEED98E46 /* Pods_BinaryTest.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -74,11 +77,13 @@
 				4A2CC9C72915130400C23E71 /* SceneDelegate.m */,
 				4A2CC9C92915130400C23E71 /* ViewController.h */,
 				4A2CC9CA2915130400C23E71 /* ViewController.m */,
+				4AE289DE2923A23900371E79 /* AAA.swift */,
 				4A2CC9CC2915130400C23E71 /* Main.storyboard */,
 				4A2CC9CF2915130500C23E71 /* Assets.xcassets */,
 				4A2CC9D12915130500C23E71 /* LaunchScreen.storyboard */,
 				4A2CC9D42915130500C23E71 /* Info.plist */,
 				4A2CC9D52915130500C23E71 /* main.m */,
+				4AE289DD2923A23800371E79 /* BinaryTest-Bridging-Header.h */,
 			);
 			path = BinaryTest;
 			sourceTree = "<group>";
@@ -89,14 +94,13 @@
 				BC208BFF29A9B8C738A6AD37 /* Pods-BinaryTest.debug.xcconfig */,
 				BF02948860EF1C60E04930EE /* Pods-BinaryTest.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
 		9FB8D01BEA034563881365AA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				91ADBD4A9FFC57FA49F8CF45 /* libPods-BinaryTest.a */,
+				53E179C9E6FEFE0E7CB6C8AA /* Pods_BinaryTest.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -133,6 +137,7 @@
 				TargetAttributes = {
 					4A2CC9BF2915130400C23E71 = {
 						CreatedOnToolsVersion = 13.2.1;
+						LastSwiftMigration = 1320;
 					};
 				};
 			};
@@ -201,6 +206,7 @@
 				4A2CC9C52915130400C23E71 /* AppDelegate.m in Sources */,
 				4A2CC9D62915130500C23E71 /* main.m in Sources */,
 				4A2CC9C82915130400C23E71 /* SceneDelegate.m in Sources */,
+				4AE289DF2923A23900371E79 /* AAA.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -344,6 +350,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Y59KXUJS2N;
@@ -362,6 +369,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.anyway.BinaryTest;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "BinaryTest/BinaryTest-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -372,6 +382,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Y59KXUJS2N;
@@ -390,6 +401,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.anyway.BinaryTest;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "BinaryTest/BinaryTest-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

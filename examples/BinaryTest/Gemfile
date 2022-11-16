@@ -5,7 +5,7 @@ source "https://rubygems.org"
 # gem "rails"
 
 gem "cocoapods-util", path: "~/binary/cocoapods-util"
-# gem 'cocoapods', path: '~/binary/CocoaPods'
+gem 'cocoapods', path: '~/binary/CocoaPods'
 # gem 'cocoapods-binary', path: '~/binary/cocoapods-binary-xcframework'
 # gem 'cocoapods-imy-bin', path: '~/binary/cocoapods-imy-bin/cocoapods-imy-bin'
 gem 'ruby-debug-ide'

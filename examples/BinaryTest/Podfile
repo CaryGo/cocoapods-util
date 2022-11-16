@@ -2,9 +2,8 @@
 # platform :ios, '9.0'
 source 'https://github.com/CocoaPods/Specs.git'
 
-# use_frameworks! :linkage=>:static
+use_frameworks! :linkage=>:static
 
-#plugin 'cocoapods-binary'
 #plugin 'cocoapods-binary'
 
 plugin 'cocoapods-util'

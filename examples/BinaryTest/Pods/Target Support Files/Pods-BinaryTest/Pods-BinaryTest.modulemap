@@ -1,4 +1,4 @@
-module Pods_BinaryTest {
+framework module Pods_BinaryTest {
   umbrella header "Pods-BinaryTest-umbrella.h"
 
   export *

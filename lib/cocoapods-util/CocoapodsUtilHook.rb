@@ -43,7 +43,7 @@ module CocoapodsUtilHook
 
         binary_installer.update = update
         binary_installer.repo_update = repo_update
-        binary_installer.install!
+        # binary_installer.install!
 
         # reset switches setting
         Pod.is_prebuild_stage = false
