@@ -40,7 +40,11 @@ module Pod
                 check_all_componment
               else
                 installed = pod_installed
-                help! "没有找到#{@name}组件的相关信息，请检查输入的组件名称" unless installed.include?(@name)
+                help! "没有找到#{@name}组件的相关信息，请检查输入的组件名称" unless installed.include?(@name) || installed.map do |item|
+                  downcase = item.downcase
+                  @name = item if @name.downcase == downcase
+                  downcase
+                end.include?(@name.downcase)
                 check_componment_with_name(@name)
               end
             end
