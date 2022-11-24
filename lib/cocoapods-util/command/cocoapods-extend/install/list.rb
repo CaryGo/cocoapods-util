@@ -78,23 +78,25 @@ module Pod
             end
 
             def show_moreinfo(name)
-              subspecs = []
-              dependencies = []
-              parents = Array.new
+              subspecs, dependencies, parents = [], [], []
               @lockfile.internal_data["PODS"].each { |item|
+                # 取遍历的pod名称
                 pod_name = item.keys.first if item.is_a?(Hash) && item.count == 1
                 pod_name = item if item.is_a?(String)
-                if pod_name =~ /^#{name}.*$/
-                  subspecs.push(pod_name.match(/^[^\s]*/).to_s) if pod_name =~ /^#{name}\/.*$/
+                if pod_name =~ /^#{name}[\s\/]/ # 以#{name}开头，后跟一个'空格'或一个'/'
+                  subspecs.push(pod_name.match(/^[^\s]*/).to_s) if pod_name =~ /^#{name}\// # 如果#{name}后跟的是'/'，则是subspec
                   if item.is_a?(Hash)
                     item.each_value do |value| 
+                      # 如果不是以#{name}开头的，则是dependency
                       value.each {|dependency| dependencies.push(dependency.to_s) unless dependency =~ /^#{name}/ }
                     end
                   elsif item.is_a?(String)
+                    # 如果不是以#{name}开头的，则是dependency
                     dependencies.push(item.to_s) unless item =~ /^#{name}/
                   end
                 else
                   next if pod_name.nil?
+                  # 如果不是匹配到的pod名称，则检查是不是依赖了该pod
                   if item.is_a?(Hash)
                     item.each_value do |value|
                       value.each {|dependency| parents.push(pod_name.match(/^[^\s\/]*/).to_s) if dependency =~ /^#{name}/ }
@@ -102,12 +104,9 @@ module Pod
                   end
                 end
               }
-              subspecs.uniq!
-              dependencies.uniq!
-              parents.uniq!
-              UI.puts "   - SUBSPECS: ".yellow "#{subspecs.join('、')}".green unless subspecs.empty?
-              UI.puts "   - DEPENDENCIES: ".yellow "#{dependencies.join('、')}".green unless dependencies.empty?
-              UI.puts "   - WHO DEPENDS ON IT: ".yellow "#{parents.join('、')}".green unless parents.empty?
+              UI.puts "   - SUBSPECS: ".yellow "#{subspecs.uniq.join('、')}".green unless subspecs.empty?
+              UI.puts "   - DEPENDENCIES: ".yellow "#{dependencies.uniq.join('、')}".green unless dependencies.empty?
+              UI.puts "   - WHO DEPENDS ON IT: ".yellow "#{parents.uniq.join('、')}".green unless parents.empty?
             end
 
             def pod_tags_info
