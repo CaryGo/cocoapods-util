@@ -117,10 +117,10 @@ module Pod
               @lockfile.internal_data["PODS"].each do |item|
                 info = item.keys.first if item.is_a?(Hash) && item.count == 1
                 info = item if item.is_a?(String)
-                if info =~ /^[^\/]*$/
-                  name = info.match(/^[^\/\s]*/)
-                  tag = info.match(/\(.*\)/) || ''
-                  @tags_info[name.to_s] = tag.to_s
+                name = info.match(/^[^\/\s]*/).to_s
+                unless @tags_info.keys.include?(name)
+                  tag = info.match(/\(.*\)/).to_s
+                  @tags_info[name] = tag unless tag.empty?
                 end
               end
               @tags_info
