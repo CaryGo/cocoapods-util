@@ -67,10 +67,16 @@ module Pod
               UI.puts "   - SPEC REPO: ".yellow "#{repo_name}".green unless repo_name.nil?
               
               # external sources
-              external_dict = @lockfile.internal_data['EXTERNAL SOURCES']
-              unless external_dict.nil?
-                external = external_dict[name]
-                external.each { |key, value| UI.puts "   - #{key}: ".yellow "#{value}".green } unless external.nil?
+              external_sources = @lockfile.internal_data['EXTERNAL SOURCES']
+              unless external_sources.nil?
+                external_dict = external_sources[name] || Hash.new
+                # checkout options
+                checkout_options = @lockfile.internal_data['CHECKOUT OPTIONS']
+                unless checkout_options.nil?
+                  checkout_dict = checkout_options[name]
+                  external_dict.merge!(checkout_dict) if checkout_dict.is_a?(Hash)
+                end
+                external_dict.each { |key, value| UI.puts "   - #{key}: ".yellow "#{value}".green } unless external_dict.nil?
               end
 
               # subspecs、dependencies、parents
