@@ -69,14 +69,9 @@ module Pod
               # external sources
               external_sources = @lockfile.internal_data['EXTERNAL SOURCES']
               unless external_sources.nil?
-                external_dict = external_sources[name] || Hash.new
-                # checkout options
-                checkout_options = @lockfile.internal_data['CHECKOUT OPTIONS']
-                unless checkout_options.nil?
-                  checkout_dict = checkout_options[name]
-                  external_dict.merge!(checkout_dict) if checkout_dict.is_a?(Hash)
-                end
-                external_dict.each { |key, value| UI.puts "   - #{key}: ".yellow "#{value}".green } unless external_dict.nil?
+                external_dict = external_sources[name]
+                UI.puts "   - EXTERNAL SOURCES: ".yellow unless external_dict.nil?
+                external_dict.each { |key, value| UI.puts "     - #{key}: ".yellow "#{value}".green } unless external_dict.nil?
               end
 
               # subspecs、dependencies、parents
@@ -84,6 +79,14 @@ module Pod
             end
 
             def show_moreinfo(name)
+              # checkout options
+              checkout_options = @lockfile.internal_data['CHECKOUT OPTIONS']
+              unless checkout_options.nil?
+                checkout_dict = checkout_options[name]
+                UI.puts "   - CHECKOUT OPTIONS: ".yellow unless checkout_dict.nil?
+                checkout_dict.each { |key, value| UI.puts "     - #{key}: ".yellow "#{value}".green } unless checkout_dict.nil?
+              end
+
               subspecs, dependencies, parents = [], [], []
               @lockfile.internal_data["PODS"].each { |item|
                 # 取遍历的pod名称
@@ -112,7 +115,7 @@ module Pod
               }
               UI.puts "   - SUBSPECS: ".yellow "#{subspecs.uniq.join('、')}".green unless subspecs.empty?
               UI.puts "   - DEPENDENCIES: ".yellow "#{dependencies.uniq.join('、')}".green unless dependencies.empty?
-              UI.puts "   - WHO DEPENDS ON IT: ".yellow "#{parents.uniq.join('、')}".green unless parents.empty?
+              UI.puts "   - DEPENDS ON IT: ".yellow "#{parents.uniq.join('、')}".green unless parents.empty?
             end
 
             def pod_tags_info
