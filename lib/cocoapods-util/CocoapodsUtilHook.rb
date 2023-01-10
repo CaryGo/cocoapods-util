@@ -8,14 +8,14 @@ module CocoapodsUtilHook
 
         # [Check Environment]
         podfile = installer_context.podfile
-        # podfile.target_definition_list.each do |target_definition|
-        #     # next if target_definition.prebuild_framework_pod_names.empty?
-        #     # if not target_definition.uses_frameworks?
-        #     #     STDERR.puts "[!] Cocoapods-binary requires `use_frameworks!`".red
-        #     #     exit
-        #     # end
-        # end
+        podfile.target_definition_list.each do |target_definition|
+            if not target_definition.uses_frameworks?
+                STDERR.puts "[!] Cocoapods-binary requires `use_frameworks!`".red
+                exit
+            end
+        end
 
+        require_relative 'hooks/pod_target'
         require_relative 'hooks/prebuild_sandbox'
 
         # 读取update和repo_update参数
