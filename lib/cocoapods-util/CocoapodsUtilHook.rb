@@ -1,7 +1,8 @@
+require_relative 'hooks/feature_switch'
+
 module CocoapodsUtilHook
     Pod::HooksManager.register('cocoapods-util', :pre_install) do |installer_context, _|
         puts "pre_install"
-        require_relative 'hooks/feature_switch'
         if Pod.is_prebuild_stage
             next
         end
