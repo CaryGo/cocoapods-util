@@ -11,15 +11,36 @@ module Pod
 
             paths = []
             pt.file_accessors.each do |file_accessor|
-                file_accessor.vendored_xcframeworks.map { |path| 
-                    Xcode::XCFramework.new(file_accessor.spec.name, path) 
-                }.each { |xcfwk| 
-                    xcfwk.slices.each { |slice|
-                        name = slice.path.basename
-                        paths.push "${PODS_XCFRAMEWORKS_BUILD_DIR}/#{xcfwk.target_name}/#{name}/Headers" unless name.nil?
+                # xcframeworks
+                if Gem::Version.new(Pod::VERSION) >= Gem::Version.new('1.10.0')
+                    greater_than_or_equal_to_1_11_0 = (Gem::Version.new(Pod::VERSION) >= Gem::Version.new('1.11.0'))
+                    file_accessor.vendored_xcframeworks.map { |path| 
+                        if greater_than_or_equal_to_1_11_0
+                            Xcode::XCFramework.new(file_accessor.spec.name, path)
+                        else
+                            Xcode::XCFramework.new(path)
+                        end
+                    }.each { |xcfwk| 
+                        xcfwk.slices.each { |slice|
+                            fwk_name = slice.path.basename
+                            if greater_than_or_equal_to_1_11_0
+                                paths.push "${PODS_XCFRAMEWORKS_BUILD_DIR}/#{xcfwk.target_name}/#{fwk_name}/Headers"
+                            else
+                                paths.push "${PODS_XCFRAMEWORKS_BUILD_DIR}/#{fwk_name.to_s.gsub(/\.framework$/, '')}/#{fwk_name}/Headers"
+                            end
+                        }
                     }
-                }
+                else
+                    file_accessor.vendored_xcframeworks.each { |path| 
+                        Dir.glob("#{path.to_s}/**/*.framework").each do |fwk_path|
+                            header_path = Pathname.new("#{fwk_path}/Headers")
+                            next unless header_path.exist?
+                            paths.push "${PODS_ROOT}/#{header_path.relative_path_from(pt.sandbox.root)}"
+                        end 
+                    }
+                end
 
+                # frameworks
                 (file_accessor.vendored_frameworks - file_accessor.vendored_xcframeworks).each { |framework|
                     header_path = Pathname.new("#{framework}/Headers")
                     next unless header_path.exist?
