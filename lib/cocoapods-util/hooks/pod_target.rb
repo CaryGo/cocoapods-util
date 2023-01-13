@@ -2,43 +2,33 @@ module Pod
     class Target
       # @since 1.5.0
       class BuildSettings
-        def enable_missing_framework_header(pt)
-            Pod::Podfile::DSL.enable_targets.include? pt.name
-        end
-
+        # missing framework header search paths
         def missing_framework_header_search_path(pt)
-            return [] unless enable_missing_framework_header(pt)
+            return [] unless Pod::Podfile::DSL.enable_targets.include? pt.name
 
             paths = []
             pt.file_accessors.each do |file_accessor|
                 # xcframeworks
-                if Gem::Version.new(Pod::VERSION) >= Gem::Version.new('1.10.0')
-                    greater_than_or_equal_to_1_11_0 = (Gem::Version.new(Pod::VERSION) >= Gem::Version.new('1.11.0'))
-                    file_accessor.vendored_xcframeworks.map { |path| 
+                greater_than_or_equal_to_1_10_0 = Gem::Version.new(Pod::VERSION) >= Gem::Version.new('1.10.0')
+                greater_than_or_equal_to_1_11_0 = Gem::Version.new(Pod::VERSION) >= Gem::Version.new('1.11.0')
+                file_accessor.vendored_xcframeworks.map { |path| 
+                    if greater_than_or_equal_to_1_11_0
+                        Xcode::XCFramework.new(file_accessor.spec.name, path)
+                    else
+                        Xcode::XCFramework.new(path)
+                    end
+                }.each { |xcfwk| 
+                    xcfwk.slices.each { |slice|
+                        fwk_name = slice.path.basename
                         if greater_than_or_equal_to_1_11_0
-                            Xcode::XCFramework.new(file_accessor.spec.name, path)
+                            paths.push "${PODS_XCFRAMEWORKS_BUILD_DIR}/#{xcfwk.target_name}/#{fwk_name}/Headers"
+                        elsif greater_than_or_equal_to_1_10_0
+                            paths.push "${PODS_XCFRAMEWORKS_BUILD_DIR}/#{fwk_name.to_s.gsub(/\.framework$/, '')}/#{fwk_name}/Headers"
                         else
-                            Xcode::XCFramework.new(path)
+                            paths.push "${PODS_CONFIGURATION_BUILD_DIR}/#{fwk_name}/Headers"
                         end
-                    }.each { |xcfwk| 
-                        xcfwk.slices.each { |slice|
-                            fwk_name = slice.path.basename
-                            if greater_than_or_equal_to_1_11_0
-                                paths.push "${PODS_XCFRAMEWORKS_BUILD_DIR}/#{xcfwk.target_name}/#{fwk_name}/Headers"
-                            else
-                                paths.push "${PODS_XCFRAMEWORKS_BUILD_DIR}/#{fwk_name.to_s.gsub(/\.framework$/, '')}/#{fwk_name}/Headers"
-                            end
-                        }
                     }
-                else
-                    file_accessor.vendored_xcframeworks.each { |path| 
-                        Dir.glob("#{path.to_s}/**/*.framework").each do |fwk_path|
-                            header_path = Pathname.new("#{fwk_path}/Headers")
-                            next unless header_path.exist?
-                            paths.push "${PODS_ROOT}/#{header_path.relative_path_from(pt.sandbox.root)}"
-                        end 
-                    }
-                end
+                }
 
                 # frameworks
                 (file_accessor.vendored_frameworks - file_accessor.vendored_xcframeworks).each { |framework|
@@ -67,7 +57,6 @@ module Pod
             alias_method :old_raw_header_search_paths, :_raw_header_search_paths
             def _raw_header_search_paths
                 header_search_paths = old_raw_header_search_paths
-                # header_search_paths.concat missing_framework_header_search_path(target)
                 header_search_paths.concat dependent_targets.flat_map { |pt| missing_framework_header_search_path(pt) } if target.should_build?
                 header_search_paths.uniq
             end
