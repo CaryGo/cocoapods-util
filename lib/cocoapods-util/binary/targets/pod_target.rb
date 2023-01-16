@@ -29,6 +29,16 @@ module Pod
                         end
                     }
                 }
+                # Cocoapods 1.9.x bugs
+                if Gem::Version.new(Pod::VERSION) < Gem::Version.new('1.10.0')
+                    file_accessor.vendored_xcframeworks.each { |path| 
+                        Dir.glob("#{path.to_s}/**/*.framework").each do |fwk_path|
+                            header_path = Pathname.new("#{fwk_path}/Headers")
+                            next unless header_path.exist?
+                            paths.push "${PODS_ROOT}/#{header_path.relative_path_from(pt.sandbox.root)}"
+                        end 
+                    }
+                end
 
                 # frameworks
                 (file_accessor.vendored_frameworks - file_accessor.vendored_xcframeworks).each { |framework|

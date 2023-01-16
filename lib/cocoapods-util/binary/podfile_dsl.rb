@@ -1,7 +1,3 @@
-module Pod
-    class_attr_accessor :is_prebuild_stage
-end
-
 module Pod    
     class Podfile
         module DSL
@@ -30,7 +26,8 @@ module Pod
                     enable = options.delete(keyword)
                     args.pop if options.empty?
                 end
-                DSL.enable_targets.push name if enable
+                DSL.enable_targets.push name.to_s.gsub(/\/.*$/, '') if enable
+                DSL.enable_targets.uniq!
                 old_method.bind(self).(name, *args)
             end
         end
