@@ -29,8 +29,8 @@ module Pod
             default_build_settings = Hash.new
             default_build_settings["CLANG_MODULES_AUTOLINK"] = "NO"
             default_build_settings["GCC_GENERATE_DEBUGGING_SYMBOLS"] = "YES" # 生成Debug编译信息
-            default_build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64" unless @xcframework && self.match_pod_version?('~> 1.11') # 非xcframework排除ios simulator 64位架构
-            default_build_settings["EXCLUDED_ARCHS[sdk=appletvsimulator*]"] = "arm64" unless @xcframework && self.match_pod_version?('~> 1.11') # 非xcframework排除tvos simulator 64位架构
+            default_build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64" # unless @xcframework && Gem::Version.new(Pod::VERSION) >=  Gem::Version.new('1.11')# 非xcframework排除ios simulator 64位架构
+            default_build_settings["EXCLUDED_ARCHS[sdk=appletvsimulator*]"] = "arm64" # unless @xcframework && Gem::Version.new(Pod::VERSION) >=  Gem::Version.new('1.11') # 非xcframework排除tvos simulator 64位架构
             default_build_settings["BUILD_LIBRARY_FOR_DISTRIBUTION"] = "YES" # 编译swift生成swiftinterface文件
             default_build_settings["CODE_SIGN_IDENTITY"] = "" if `xcodebuild -version`.lines.shift.gsub!('Xcode ', '') >= "14" #xcode版本大于等于xcode 14时需要添加
             
@@ -120,10 +120,6 @@ module Pod
           end
 
           Specification.from_file(@path)
-        end
-
-        def match_pod_version?(*version)
-          Gem::Dependency.new('', *version).match?('', Pod::VERSION)
         end
       end
     end
