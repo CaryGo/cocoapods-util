@@ -1,7 +1,7 @@
 require_relative '../targets/pod_target'
 
-module Prebuild
-    class PreInstallHook
+module BinaryPrebuild
+    class PreInstall
         def initialize(installer_context)
             @installer_context = installer_context
         end

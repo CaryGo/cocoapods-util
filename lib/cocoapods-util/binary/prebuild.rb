@@ -1,3 +1,3 @@
-module Prebuild
+module BinaryPrebuild
     
 end

@@ -3,7 +3,7 @@ require_relative 'post_install'
 
 module CocoapodsUtilHook
     Pod::HooksManager.register('cocoapods-util', :pre_install) do |installer_context, _|
-        Prebuild::PreInstallHook.new(installer_context).run
+        BinaryPrebuild::PreInstall.new(installer_context).run
     end
 
     Pod::HooksManager.register('cocoapods-util', :pre_integrate) do |context, _|
@@ -11,7 +11,7 @@ module CocoapodsUtilHook
     end
 
     Pod::HooksManager.register('cocoapods-util', :post_install) do |context, _|
-        Prebuild::PostInstallHook.new(context).run
+        BinaryPrebuild::PostInstall.new(context).run
     end
 
     Pod::HooksManager.register('cocoapods-util', :post_integrate) do |context, _|
