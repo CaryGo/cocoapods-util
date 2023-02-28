@@ -70,6 +70,26 @@ module Pod
                 header_search_paths.concat dependent_targets.flat_map { |pt| missing_framework_header_search_path(pt) } if target.should_build?
                 header_search_paths.uniq
             end
+
+            # 按照规则替换framework_search_paths，兼容不同的configuration
+            # 从编译上来说，仅仅替换了framework_search_paths的路径就够了
+            # @return [Array<String>]
+            alias_method :old_raw_framework_search_paths, :_raw_framework_search_paths
+            def _raw_framework_search_paths
+                framework_search_paths = old_raw_framework_search_paths
+                framework_search_paths.map! { |path|
+                    if path =~ /^.*[^\/]\/binary-(Release|Debug)$/
+                        configuration = @configuration.to_s.downcase
+                        if configuration == 'debug'
+                            path.gsub!(/binary-(Release|Debug)$/, 'binary-Debug')
+                        elsif configuration == 'release'
+                            path.gsub!(/binary-(Release|Debug)$/, 'binary-Release')
+                        end
+                    end
+                    path
+                }
+                framework_search_paths
+            end
          end
       end
     end
