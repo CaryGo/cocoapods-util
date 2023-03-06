@@ -4,7 +4,7 @@ module Pod
       class BuildSettings
         # missing framework header search paths
         def missing_framework_header_search_path(pt)
-            return [] unless BinaryPrebuild.config.enable_targets.include? pt.name
+            return [] unless BinaryPrebuild.config.framework_header_enable?(pt.name)
 
             paths = []
             pt.file_accessors.each do |file_accessor|
