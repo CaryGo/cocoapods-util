@@ -77,13 +77,14 @@ module Pod
             alias_method :old_raw_framework_search_paths, :_raw_framework_search_paths
             def _raw_framework_search_paths
                 framework_search_paths = old_raw_framework_search_paths
+                xcconfig_replace_path = BinaryPrebuild.config.xcconfig_replace_path
                 framework_search_paths.map! { |path|
-                    if path =~ /^.*[^\/]\/binary-(Release|Debug)$/
+                    if path =~ /^.*[^\/]\/#{xcconfig_replace_path}-(Release|Debug)$/
                         configuration = @configuration.to_s.downcase
                         if configuration == 'debug'
-                            path.gsub!(/binary-(Release|Debug)$/, 'binary-Debug')
+                            path.gsub!(/#{xcconfig_replace_path}-(Release|Debug)$/, "#{xcconfig_replace_path}-Debug")
                         elsif configuration == 'release'
-                            path.gsub!(/binary-(Release|Debug)$/, 'binary-Release')
+                            path.gsub!(/#{xcconfig_replace_path}-(Release|Debug)$/, "#{xcconfig_replace_path}-Release")
                         end
                     end
                     path

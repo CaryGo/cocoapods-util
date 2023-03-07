@@ -5,10 +5,13 @@ module BinaryPrebuild
 
     class Config 
         attr_accessor :dsl_config
-        
+
         APPLICABLE_DSL_CONFIG = [
             :all_framework_search_header,
-            :all_binary
+            :all_binary,
+            :dev_pods_enabled,
+            :framework_search_path,
+            :xcconfig_replace_path,
         ].freeze
 
         def initialize()
@@ -58,6 +61,18 @@ module BinaryPrebuild
 
         def all_binary_enable?
             @dsl_config[:all_binary] || false
+        end
+
+        def dev_pods_enabled?
+            @dsl_config[:dev_pods_enabled] || false
+        end
+
+        def framework_search_path
+            @dsl_config[:framework_search_path]
+        end
+
+        def xcconfig_replace_path
+            @dsl_config[:xcconfig_replace_path] || "binary"
         end
     end
 end

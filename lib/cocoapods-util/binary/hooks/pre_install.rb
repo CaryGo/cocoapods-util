@@ -1,4 +1,5 @@
 require_relative '../targets/pod_target'
+require_relative '../Intergation'
 
 module BinaryPrebuild
     class PreInstall
