@@ -1,9 +1,8 @@
 module Pod
     class XCFrameworkBuilder
-        def initialize(name, source_dir, create_swiftinterface)
+        def initialize(name, source_dir)
             @name = name
             @source_dir = source_dir
-            @create_swiftinterface = create_swiftinterface
         end
 
         def build_static_xcframework
@@ -57,7 +56,7 @@ module Pod
             # 2. copy os framework
             if os_archs.count > 0
                 path = Pathname.new("#{@source_dir}/#{os_target_path}")
-                path.mkdir unless path.exist?
+                FileUtils.mkdir_p(path) unless path.exist?
                 `cp -a #{framework_path} #{path}/`
         
                 fwk_path = "#{path}/#{@name}.framework"
@@ -67,7 +66,7 @@ module Pod
             # 3. copy simulation framework
             if sim_archs.count > 0
                 path = Pathname.new("#{@source_dir}/#{simulator_target_path}")
-                path.mkdir unless path.exist?
+                FileUtils.mkdir_p(path) unless path.exist?
                 `cp -a #{framework_path} #{path}/`
 
                 fwk_path = "#{path}/#{@name}.framework"
@@ -86,23 +85,8 @@ module Pod
         def generate_xcframework(framework_paths)
             UI.puts("Generate #{@name}.xcframework")
 
-            framework_paths.each { |framework_path|
-                # check_swiftmodule
-                swiftmodule_path = Dir.glob("#{framework_path}/Modules/*.swiftmodule").first
-                unless swiftmodule_path.nil?
-                    if Dir.glob("#{swiftmodule_path}/*.swiftinterface").empty?
-                        unless @create_swiftinterface
-                            UI.puts "Framework中包含swiftmodule文件，但是没有swiftinterface，无法创建xcframework，请检查Framework文件。或者使用`--create-swiftinterface`参数"
-                            return
-                        end
-                        arm_swiftinterface = Pathname.new("#{swiftmodule_path}/arm.swiftinterface")
-                        File.new(arm_swiftinterface, "w+").close
-                    end
-                end
-            }
-
-            # build xcframework
-            command = "xcodebuild -create-xcframework -framework #{framework_paths.join(' -framework ')} -output #{@source_dir}/#{@name}.xcframework 2>&1"
+            # create xcframework
+            command = "xcodebuild -create-xcframework -allow-internal-distribution -framework #{framework_paths.join(' -framework ')} -output #{@source_dir}/#{@name}.xcframework 2>&1"
             output = `#{command}`.lines.to_a
             result = $?
             # show error
@@ -115,19 +99,19 @@ module Pod
 
         private
         def clean_intermediate_path
-            [os_target_path, simulator_target_path].each do |path|
-                file_path = "#{@source_dir}/#{path}"
-                if File.exist? file_path
-                    FileUtils.rm_rf(file_path)
-                end
-            end
+            file_path = "#{@source_dir}/#{temp_intermediate_path}"
+            FileUtils.rm_rf(file_path) if File.exist? file_path
+        end
+
+        def temp_intermediate_path
+            "__temp_create_xcframework_dir"
         end
 
         def os_target_path
-            "#{@name}_temp_os"
+            "#{temp_intermediate_path}/#{@name}_os"
         end
         def simulator_target_path
-            "#{@name}_temp_simulator"
+            "#{temp_intermediate_path}/#{@name}_simulator"
         end
     end
 end

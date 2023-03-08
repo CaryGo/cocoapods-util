@@ -15,16 +15,13 @@ module Pod
       
               def self.options
                 [
-                  ['--force',   '覆盖已经存在的文件'],
-                  ['--create-swiftinterface', '有编译swift文件的framework，如果不包含swiftinterface则无法生成xcframework。
-                    设置该参数会生成一个swiftinterface文件解决create失败的问题。']
+                  ['--force',   '覆盖已经存在的文件']
                 ]
               end
       
               def initialize(argv)
                 @file_path = argv.shift_argument
                 @force = argv.flag?('force')
-                @create_swiftinterface = argv.flag?('create-swiftinterface')
                 super
               end
       
@@ -55,8 +52,7 @@ module Pod
                 
                 builder = XCFrameworkBuilder.new(
                   framework_name,
-                  source_dir,
-                  @create_swiftinterface
+                  source_dir
                 )
                 builder.build_static_xcframework
               end
