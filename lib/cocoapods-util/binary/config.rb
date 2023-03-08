@@ -72,7 +72,7 @@ module BinaryPrebuild
         end
 
         def xcconfig_replace_path
-            @dsl_config[:xcconfig_replace_path] || "binary"
+            @dsl_config[:xcconfig_replace_path] || "cocoapods-util-binary"
         end
     end
 end

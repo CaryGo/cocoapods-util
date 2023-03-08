@@ -47,7 +47,25 @@ module Pod
                     paths.push "${PODS_ROOT}/#{header_path.relative_path_from(pt.sandbox.root)}"
                 }
             end
+            replace_xcconfig_configuration_paths(paths)
             paths.uniq
+        end
+
+        # replace different configuration xcconfig
+        def replace_xcconfig_configuration_paths(paths)
+            xcconfig_replace_path = BinaryPrebuild.config.xcconfig_replace_path
+            paths.map! { |path|
+                if path =~ /#{xcconfig_replace_path}-(Release|Debug)/
+                    configuration = @configuration.to_s.downcase
+                    if configuration == 'debug'
+                        path.gsub!(/#{xcconfig_replace_path}-(Release|Debug)/, "#{xcconfig_replace_path}-Debug")
+                    elsif configuration == 'release'
+                        path.gsub!(/#{xcconfig_replace_path}-(Release|Debug)/, "#{xcconfig_replace_path}-Release")
+                    end
+                end
+                path
+            }
+            paths
         end
 
          # A subclass that generates build settings for a `PodTarget`
@@ -77,18 +95,7 @@ module Pod
             alias_method :old_raw_framework_search_paths, :_raw_framework_search_paths
             def _raw_framework_search_paths
                 framework_search_paths = old_raw_framework_search_paths
-                xcconfig_replace_path = BinaryPrebuild.config.xcconfig_replace_path
-                framework_search_paths.map! { |path|
-                    if path =~ /^.*[^\/]\/#{xcconfig_replace_path}-(Release|Debug)$/
-                        configuration = @configuration.to_s.downcase
-                        if configuration == 'debug'
-                            path.gsub!(/#{xcconfig_replace_path}-(Release|Debug)$/, "#{xcconfig_replace_path}-Debug")
-                        elsif configuration == 'release'
-                            path.gsub!(/#{xcconfig_replace_path}-(Release|Debug)$/, "#{xcconfig_replace_path}-Release")
-                        end
-                    end
-                    path
-                }
+                replace_xcconfig_configuration_paths(framework_search_paths)
                 framework_search_paths
             end
          end
