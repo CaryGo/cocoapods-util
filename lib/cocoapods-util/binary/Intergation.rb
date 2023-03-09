@@ -297,3 +297,18 @@ module Pod
       end
     end
 end
+
+module Pod
+    module Generator
+      class CopyResourcesScript
+
+        alias_method :old_script, :script
+        def script
+            script = old_script
+            xcconfig_replace_path = BinaryPrebuild.config.xcconfig_replace_path
+            script.gsub!(/#{xcconfig_replace_path}-(Debug|Release)/, "#{xcconfig_replace_path}-${CONFIGURATION}")
+            script
+        end
+      end
+    end
+end

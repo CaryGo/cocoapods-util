@@ -55,12 +55,12 @@ module Pod
         def replace_xcconfig_configuration_paths(paths)
             xcconfig_replace_path = BinaryPrebuild.config.xcconfig_replace_path
             paths.map! { |path|
-                if path =~ /#{xcconfig_replace_path}-(Release|Debug)/
+                if path =~ /#{xcconfig_replace_path}-(Debug|Release)/
                     configuration = @configuration.to_s.downcase
                     if configuration == 'debug'
-                        path.gsub!(/#{xcconfig_replace_path}-(Release|Debug)/, "#{xcconfig_replace_path}-Debug")
+                        path.gsub!(/#{xcconfig_replace_path}-(Debug|Release)/, "#{xcconfig_replace_path}-Debug")
                     elsif configuration == 'release'
-                        path.gsub!(/#{xcconfig_replace_path}-(Release|Debug)/, "#{xcconfig_replace_path}-Release")
+                        path.gsub!(/#{xcconfig_replace_path}-(Debug|Release)/, "#{xcconfig_replace_path}-Release")
                     end
                 end
                 path
