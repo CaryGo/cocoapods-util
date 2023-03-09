@@ -47,9 +47,14 @@ module Pod
                 end
                 def mirror_with_symlink(source, basefolder, target_folder)
                     relative_path = source.relative_path_from(basefolder)
-                    new_relative_path = relative_path.to_s.gsub!(/^(Debug|Release)/) { |match| "#{BinaryPrebuild.config.xcconfig_replace_path}-#{match}" }
-                    target = Pathname.new("#{target_folder}/#{new_relative_path}")
-                    make_link(source, target)
+                    if relative_path.to_s =~ /^(Debug|Release)\/.*/
+                        new_relative_path = relative_path.to_s.gsub!(/^(Debug|Release)/) { |match| "#{BinaryPrebuild.config.xcconfig_replace_path}-#{match}" }
+                        target = Pathname.new("#{target_folder}/#{new_relative_path}")
+                        make_link(source, target)
+                    else
+                        target = Pathname.new("#{target_folder}/#{relative_path}")
+                        make_link(source, target)
+                    end
                 end
                 
                 target_names.each do |name|
@@ -61,10 +66,7 @@ module Pod
                     # If have multiple paths, we use a sperated folder to store different
                     # platform frameworks. e.g. AFNetworking/AFNetworking-iOS/AFNetworking.framework
                     
-                    target_folder = standard_sanbox.pod_dir(self.name)
-                    if target_names.count > 1 
-                        target_folder += real_file_folder.basename
-                    end
+                    target_folder = standard_sanbox.pod_dir(self.name) +  "_Prebuild"
                     target_folder.rmtree if target_folder.exist?
                     target_folder.mkpath
 
@@ -97,44 +99,9 @@ end
 #
 module Pod
     class Installer
-
-
-        # # Remove the old target files if prebuild frameworks changed
-        # def remove_target_files_if_needed
-
-        #     changes = Pod::Prebuild::Passer.prebuild_pods_changes
-        #     updated_names = []
-        #     if changes == nil
-        #         updated_names = PrebuildSandbox.from_standard_sandbox(self.sandbox).exsited_framework_pod_names
-        #     else
-        #         added = changes.added
-        #         changed = changes.changed 
-        #         deleted = changes.deleted 
-        #         updated_names = added + changed + deleted
-        #     end
-
-        #     updated_names.each do |name|
-        #         root_name = Specification.root_name(name)
-        #         next if self.sandbox.local?(root_name)
-
-        #         # delete the cached files
-        #         target_path = self.sandbox.pod_dir(root_name)
-        #         target_path.rmtree if target_path.exist?
-
-        #         support_path = sandbox.target_support_files_dir(root_name)
-        #         support_path.rmtree if support_path.exist?
-        #     end
-
-        # end
-
-
         # Modify specification to use only the prebuild framework after analyzing
         old_method2 = instance_method(:resolve_dependencies)
         define_method(:resolve_dependencies) do
-
-            # Remove the old target files, else it will not notice file changes
-            # self.remove_target_files_if_needed
-
             # call original
             old_method2.bind(self).()
             # ...
@@ -148,7 +115,6 @@ module Pod
             # Prebuild.check_one_pod_should_have_only_one_target(self.prebuild_pod_targets)
             # self.validate_every_pod_only_have_one_form
 
-            
             # prepare
             cache = []
 
@@ -170,13 +136,17 @@ module Pod
                 end
             end
 
+            prebuild_sandbox = BinaryPrebuild::Sandbox.from_sandbox(self.sandbox)
+            return if prebuild_sandbox.nil?
 
             specs = self.analysis_result.specifications
             prebuilt_specs = (specs.select do |spec|
+                # rmtree
+                target_prebuild_files = self.sandbox.root + spec.root.name + "_Prebuild"
+                target_prebuild_files.rmtree if target_prebuild_files.exist?
+
                 BinaryPrebuild.config.binary_enable? spec.root.name
             end)
-
-            sandbox = self.sandbox
 
             prebuilt_specs.each do |spec|
 
@@ -189,11 +159,12 @@ module Pod
                     # framework_file_path = target.framework_name
                     # framework_file_path = target.name + "/" + framework_file_path if targets.count > 1
                     
-                    framework_file_path = target.framework_name
-                    add_vendered_framework(spec, target.platform.name.to_s, framework_file_path)
-
-                    framework_file_path = "#{BinaryPrebuild.config.xcconfig_replace_path}-Release/" + target.framework_name
-                    add_vendered_framework(spec, target.platform.name.to_s, framework_file_path)
+                    break if spec.name.to_s =~ /[^\/]*\/[^\/]*/
+                    
+                    prebuild_sandbox.prebuild_vendored_frameworks(spec.root.name).each do |frame_file_path|
+                        framework_file_path = "_Prebuild/" + frame_file_path
+                        add_vendered_framework(spec, target.platform.name.to_s, framework_file_path)
+                    end
                 end
                 # Clean the source files
                 # we just add the prebuilt framework to specific platform and set no source files 
@@ -208,15 +179,19 @@ module Pod
                 # file.
                 # https://github.com/leavez/cocoapods-binary/issues/29
                 if spec.attributes_hash["resource_bundles"]
-                    bundle_names = spec.attributes_hash["resource_bundles"].keys
+                    # bundle_names = spec.attributes_hash["resource_bundles"].keys
                     spec.attributes_hash["resource_bundles"] = nil 
                     spec.attributes_hash["resources"] ||= []
-                    spec.attributes_hash["resources"] += bundle_names.map{|n| n+".bundle"}
+                    # spec.attributes_hash["resources"] += bundle_names.map{|n| n+".bundle"}
+                    prebuild_bundles = prebuild_sandbox.prebuild_bundles(spec.root.name).each.map do |bundle_path|
+                        "_Prebuild/" + bundle_path
+                    end
+                    spec.attributes_hash["resources"] += prebuild_bundles
                 end
 
                 # to avoid the warning of missing license
                 spec.attributes_hash["license"] = {}
-                spec.attributes_hash["preserve_paths"] = "**/*.{framework,xcframework,bundle}"
+                spec.attributes_hash["preserve_paths"] = "**/*"
 
             end
 
@@ -231,10 +206,12 @@ module Pod
             pod_installer = create_pod_installer(pod_name)
             # \copy from original
 
+             # copy from original
+             pod_installer.install!
+             # \copy from original
+
             if BinaryPrebuild.config.binary_enable? pod_name
                 pod_installer.install_for_prebuild!(self.sandbox)
-            else
-                pod_installer.install!
             end
 
             # copy from original
@@ -242,7 +219,18 @@ module Pod
             # \copy from original
         end
 
+        alias_method :old_create_pod_installer, :create_pod_installer
+        def create_pod_installer(pod_name)
+            pod_installer = old_create_pod_installer(pod_name)
 
+            pods_to_install = sandbox_state.added | sandbox_state.changed
+            unless pods_to_install.include?(pod_name)
+                if BinaryPrebuild.config.binary_enable? pod_name
+                    pod_installer.install_for_prebuild!(self.sandbox)
+                end
+            end
+            pod_installer
+        end
     end
 end
 
@@ -284,5 +272,22 @@ module Pod
                 patch + script
             end
         end
+    end
+end
+
+module Pod
+    module Generator
+      class CopyXCFrameworksScript
+
+        alias_method :old_install_xcframework_args, :install_xcframework_args
+        def install_xcframework_args(xcframework, slices)
+            args = old_install_xcframework_args(xcframework, slices)
+            if BinaryPrebuild.config.binary_enable? xcframework.target_name
+                xcconfig_replace_path = BinaryPrebuild.config.xcconfig_replace_path
+                args.gsub!(/#{xcconfig_replace_path}-(Debug|Release)/, "#{xcconfig_replace_path}-${CONFIGURATION}")
+            end
+            args
+          end
+      end
     end
 end
