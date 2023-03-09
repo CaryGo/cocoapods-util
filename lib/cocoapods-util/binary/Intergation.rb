@@ -1,6 +1,4 @@
 require_relative 'helper/podfile_options'
-# require_relative 'helper/feature_switches'
-# require_relative 'helper/prebuild_sandbox'
 require_relative 'helper/names'
 require_relative 'helper/target_checker'
 
@@ -129,9 +127,13 @@ module Pod
             end
             def empty_source_files(spec)
                 spec.attributes_hash["source_files"] = []
+                spec.attributes_hash["public_header_files"] = []
+                spec.attributes_hash["private_header_files"] = []
                 ["ios", "watchos", "tvos", "osx"].each do |plat|
                     if spec.attributes_hash[plat] != nil
                         spec.attributes_hash[plat]["source_files"] = []
+                        spec.attributes_hash[plat]["public_header_files"] = []
+                        spec.attributes_hash[plat]["private_header_files"] = []
                     end
                 end
             end
@@ -145,7 +147,8 @@ module Pod
                 target_prebuild_files = self.sandbox.root + spec.root.name + "_Prebuild"
                 target_prebuild_files.rmtree if target_prebuild_files.exist?
 
-                BinaryPrebuild.config.binary_enable? spec.root.name
+                target_names = prebuild_sandbox.existed_target_names(spec.root.name)
+                BinaryPrebuild.config.binary_enable?(spec.root.name) && target_names.count > 0
             end)
 
             prebuilt_specs.each do |spec|
@@ -182,6 +185,9 @@ module Pod
                     # bundle_names = spec.attributes_hash["resource_bundles"].keys
                     spec.attributes_hash["resource_bundles"] = nil 
                     spec.attributes_hash["resources"] ||= []
+                    resources = spec.attributes_hash["resources"] || []
+                    resources = [resources] if resources.kind_of?(String)
+                    spec.attributes_hash["resources"] = resources
                     # spec.attributes_hash["resources"] += bundle_names.map{|n| n+".bundle"}
                     prebuild_bundles = prebuild_sandbox.prebuild_bundles(spec.root.name).each.map do |bundle_path|
                         "_Prebuild/" + bundle_path
