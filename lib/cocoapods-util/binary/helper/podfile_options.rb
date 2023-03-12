@@ -3,17 +3,25 @@ module Pod
     class Podfile
       class TargetDefinition
         def detect_prebuilt_pod(name, requirements)
-          @explicit_prebuilt_pod_names ||= []
+          @explicit_prebuild_pod_names ||= []
+          @reject_prebuild_pod_names ||= []
           options = requirements.last || {}
-          @explicit_prebuilt_pod_names << Specification.root_name(name) if options.is_a?(Hash) && options[:binary]
+          @explicit_prebuild_pod_names << Specification.root_name(name) if options.is_a?(Hash) && options[:binary]
+          @reject_prebuild_pod_names << Specification.root_name(name) if options.is_a?(Hash) && options.include?(:binary) && !options[:binary]
           options.delete(:binary) if options.is_a?(Hash)
           requirements.pop if options.empty?
         end
   
         # Returns the names of pod targets explicitly declared as prebuilt in Podfile using `:binary => true`.
-        def explicit_prebuilt_pod_names
-          names = @explicit_prebuilt_pod_names || []
-          names += parent.explicit_prebuilt_pod_names if !parent.nil? && parent.is_a?(TargetDefinition)
+        def explicit_prebuild_pod_names
+          names = @explicit_prebuild_pod_names || []
+          names += parent.explicit_prebuild_pod_names if !parent.nil? && parent.is_a?(TargetDefinition)
+          names
+        end
+
+        def reject_prebuild_pod_names
+          names = @reject_prebuild_pod_names || []
+          names += parent.reject_prebuild_pod_names if !parent.nil? && parent.is_a?(TargetDefinition)
           names
         end
   
@@ -33,7 +41,7 @@ module Pod
     class Installer
       # Returns the names of pod targets detected as prebuilt, including
       # those declared in Podfile and their dependencies
-      def prebuilt_pod_names
+      def prebuild_pod_names
         prebuilt_pod_targets.map(&:name).to_set
       end
   
@@ -41,16 +49,39 @@ module Pod
       # those declared in Podfile and their dependencies
       def prebuilt_pod_targets
         @prebuilt_pod_targets ||= begin
-          explicit_prebuilt_pod_names = aggregate_targets
-            .flat_map { |target| target.target_definition.explicit_prebuilt_pod_names }
+          explicit_prebuild_pod_names = aggregate_targets
+            .flat_map { |target| target.target_definition.explicit_prebuild_pod_names }
             .uniq
-  
-          targets = pod_targets.select { |target| explicit_prebuilt_pod_names.include?(target.pod_name) }
-          dependencies = targets.flat_map(&:recursive_dependent_targets) # Treat dependencies as prebuilt pods
-          all = (targets + dependencies).uniq
-          all = all.reject { |target| sandbox.local?(target.pod_name) } unless BinaryPrebuild.config.dev_pods_enabled?
-          all
+
+          reject_prebuild_pod_names = aggregate_targets
+            .flat_map { |target| target.target_definition.reject_prebuild_pod_names }
+            .uniq
+          
+          available_pod_names = []
+          prebuild_sandbox = BinaryPrebuild::Sandbox.from_sandbox(self.sandbox)
+          available_pod_names = prebuild_sandbox.target_paths.map {|path| path.basename.to_s } unless prebuild_sandbox.nil?
+          if BinaryPrebuild.config.all_binary_enable?
+            explicit_prebuild_pod_names = available_pod_names
+          else
+            explicit_prebuild_pod_names = (explicit_prebuild_pod_names & available_pod_names).uniq
+          end
+          explicit_prebuild_pod_names -= reject_prebuild_pod_names
+          
+          targets = pod_targets.select { |target| explicit_prebuild_pod_names.include?(target.pod_name) }
+          targets = targets.reject { |target| sandbox.local?(target.pod_name) } unless BinaryPrebuild.config.dev_pods_enabled?
+          targets
         end
       end
     end
 end
+
+# module Pod
+#   class Target
+#     def prebuild_pod_names
+#       
+#     end
+
+#     def prebuild_pod_targets
+#     end
+#   end
+# end

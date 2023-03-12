@@ -18,7 +18,6 @@ module BinaryPrebuild
             @dsl_config = {}
 
             @framework_header_targets = []
-            @binary_targets = []
         end
     
         def self.instance
@@ -42,21 +41,12 @@ module BinaryPrebuild
             @framework_header_targets.uniq!
         end
 
-        def add_binary_target(name)
-            @binary_targets.push name
-            @binary_targets.uniq!
-        end
-
         def framework_header_enable?(name)
             @framework_header_targets.include? name
         end
 
         def all_framework_header_enable?
             @dsl_config[:all_framework_search_header] || false
-        end
-
-        def binary_enable?(name)
-            @binary_targets.include?(name)
         end
 
         def all_binary_enable?

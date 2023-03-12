@@ -21,10 +21,8 @@ module Pod
             def install_for_prebuild!(standard_sanbox)
             #     return if standard_sanbox.local? self.name
 
-                # make a symlink to target folder
-                prebuild_sandbox = BinaryPrebuild::Sandbox.from_sandbox(self.sandbox)
+                prebuild_sandbox = BinaryPrebuild::Sandbox.from_sandbox(standard_sanbox)
                 return if prebuild_sandbox.nil?
-                # if spec used in multiple platforms, it may return multiple paths
                 target_names = prebuild_sandbox.existed_target_names(self.name)
                 
                 def walk(path, &action)
@@ -147,8 +145,7 @@ module Pod
                 target_prebuild_files = self.sandbox.root + spec.root.name + "_Prebuild"
                 target_prebuild_files.rmtree if target_prebuild_files.exist?
 
-                target_names = prebuild_sandbox.existed_target_names(spec.root.name)
-                BinaryPrebuild.config.binary_enable?(spec.root.name) && target_names.count > 0
+                self.prebuild_pod_names.include? spec.root.name
             end)
 
             prebuilt_specs.each do |spec|
@@ -216,7 +213,7 @@ module Pod
              pod_installer.install!
              # \copy from original
 
-            if BinaryPrebuild.config.binary_enable? pod_name
+            if self.prebuild_pod_names.include? pod_name
                 pod_installer.install_for_prebuild!(self.sandbox)
             end
 
@@ -231,7 +228,7 @@ module Pod
 
             pods_to_install = sandbox_state.added | sandbox_state.changed
             unless pods_to_install.include?(pod_name)
-                if BinaryPrebuild.config.binary_enable? pod_name
+                if self.prebuild_pod_names.include? pod_name
                     pod_installer.install_for_prebuild!(self.sandbox)
                 end
             end
@@ -288,10 +285,8 @@ module Pod
         alias_method :old_install_xcframework_args, :install_xcframework_args
         def install_xcframework_args(xcframework, slices)
             args = old_install_xcframework_args(xcframework, slices)
-            if BinaryPrebuild.config.binary_enable? xcframework.target_name
-                xcconfig_replace_path = BinaryPrebuild.config.xcconfig_replace_path
-                args.gsub!(/#{xcconfig_replace_path}-(Debug|Release)/, "#{xcconfig_replace_path}-${CONFIGURATION}")
-            end
+            xcconfig_replace_path = BinaryPrebuild.config.xcconfig_replace_path
+            args.gsub!(/#{xcconfig_replace_path}-(Debug|Release)/, "#{xcconfig_replace_path}-${CONFIGURATION}")
             args
           end
       end
