@@ -3,11 +3,20 @@ module Pod
     class Podfile
       class TargetDefinition
         def detect_prebuilt_pod(name, requirements)
+          options = requirements.last || {}
+
+          # prebuild
           @explicit_prebuild_pod_names ||= []
           @reject_prebuild_pod_names ||= []
-          options = requirements.last || {}
           @explicit_prebuild_pod_names << Specification.root_name(name) if options.is_a?(Hash) && options[:binary]
           @reject_prebuild_pod_names << Specification.root_name(name) if options.is_a?(Hash) && options.include?(:binary) && !options[:binary]
+          
+          # header search path
+          @explicit_header_search_pod_names ||= []
+          @reject_header_search_pod_names ||= []
+          @explicit_header_search_pod_names << Specification.root_name(name) if options.is_a?(Hash) && options[:framework_search_header]
+          @reject_header_search_pod_names << Specification.root_name(name) if options.is_a?(Hash) && options.include?(:framework_search_header) && !options[:framework_search_header]
+
           options.delete(:binary) if options.is_a?(Hash)
           requirements.pop if options.empty?
         end
@@ -22,6 +31,18 @@ module Pod
         def reject_prebuild_pod_names
           names = @reject_prebuild_pod_names || []
           names += parent.reject_prebuild_pod_names if !parent.nil? && parent.is_a?(TargetDefinition)
+          names
+        end
+
+        def explicit_header_search_pod_names
+          names = @explicit_header_search_pod_names || []
+          names += parent.explicit_header_search_pod_names if !parent.nil? && parent.is_a?(TargetDefinition)
+          names
+        end
+
+        def reject_header_search_pod_names
+          names = @reject_header_search_pod_names || []
+          names += parent.reject_header_search_pod_names if !parent.nil? && parent.is_a?(TargetDefinition)
           names
         end
   
@@ -49,13 +70,13 @@ module Pod
       # those declared in Podfile and their dependencies
       def prebuilt_pod_targets
         @prebuilt_pod_targets ||= begin
-          explicit_prebuild_pod_names = aggregate_targets
-            .flat_map { |target| target.target_definition.explicit_prebuild_pod_names }
-            .uniq
+          explicit_prebuild_pod_names = aggregate_targets.flat_map { |target| 
+            target.target_definition.explicit_prebuild_pod_names
+          }.uniq
 
-          reject_prebuild_pod_names = aggregate_targets
-            .flat_map { |target| target.target_definition.reject_prebuild_pod_names }
-            .uniq
+          reject_prebuild_pod_names = aggregate_targets.flat_map { |target| 
+            target.target_definition.reject_prebuild_pod_names 
+          }.uniq
           
           available_pod_names = []
           prebuild_sandbox = BinaryPrebuild::Sandbox.from_sandbox(self.sandbox)
@@ -67,21 +88,32 @@ module Pod
           end
           explicit_prebuild_pod_names -= reject_prebuild_pod_names
           
-          targets = pod_targets.select { |target| explicit_prebuild_pod_names.include?(target.pod_name) }
+          targets = pod_targets.select { |target| 
+            explicit_prebuild_pod_names.include?(target.pod_name)
+          }
           targets = targets.reject { |target| sandbox.local?(target.pod_name) } unless BinaryPrebuild.config.dev_pods_enabled?
+          targets.map { |target| target.use_binary = true }
           targets
         end
       end
     end
 end
 
-# module Pod
-#   class Target
-#     def prebuild_pod_names
-#       
-#     end
+module Pod
+  class Target
+    attr_accessor :use_binary
 
-#     def prebuild_pod_targets
-#     end
-#   end
-# end
+    def frame_header_search_paths_enable?
+      return true if self.use_binary
+      header_search_pod_names.include? self.name
+    end
+
+    def header_search_pod_names
+      @explicit_header_search_pod_names ||= begin
+        target_definitions.flat_map { |target_definition|
+          target_definition.explicit_header_search_pod_names - target_definition.reject_header_search_pod_names
+        }.uniq
+      end
+    end
+  end
+end

@@ -6,7 +6,7 @@ module BinaryPrebuild
     
         def self.from_sandbox(sandbox)
             root = sandbox.root
-            search_path = BinaryPrebuild.config.framework_search_path
+            search_path = BinaryPrebuild.config.binary_dir
             if !search_path.nil? && !search_path.empty?
                 path = File.expand_path(root + search_path)
                 if File.exist? path
@@ -15,13 +15,13 @@ module BinaryPrebuild
             end
         end
 
-        def framework_search_path
-            @framework_file_path ||= Pathname.new(@sandbox_path)
+        def binary_dir
+            @binary_dir ||= Pathname.new(@sandbox_path)
         end
 
         def target_paths
-            return [] unless framework_search_path.exist?
-            @targets ||= framework_search_path.children().map do |target_path|
+            return [] unless binary_dir.exist?
+            @targets ||= binary_dir.children().map do |target_path|
                 if target_path.directory? && (not target_path.children.empty?)
                     target_path
                 end

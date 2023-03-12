@@ -7,17 +7,14 @@ module BinaryPrebuild
         attr_accessor :dsl_config
 
         APPLICABLE_DSL_CONFIG = [
-            :all_framework_search_header,
             :all_binary,
+            :binary_dir,
             :dev_pods_enabled,
-            :framework_search_path,
             :xcconfig_replace_path,
         ].freeze
 
         def initialize()
             @dsl_config = {}
-
-            @framework_header_targets = []
         end
     
         def self.instance
@@ -36,19 +33,6 @@ module BinaryPrebuild
             Pod::UI.puts message.yellow
         end
 
-        def add_framework_header_target(name)
-            @framework_header_targets.push name
-            @framework_header_targets.uniq!
-        end
-
-        def framework_header_enable?(name)
-            @framework_header_targets.include? name
-        end
-
-        def all_framework_header_enable?
-            @dsl_config[:all_framework_search_header] || false
-        end
-
         def all_binary_enable?
             @dsl_config[:all_binary] || false
         end
@@ -57,8 +41,8 @@ module BinaryPrebuild
             @dsl_config[:dev_pods_enabled] || false
         end
 
-        def framework_search_path
-            @dsl_config[:framework_search_path]
+        def binary_dir
+            @dsl_config[:binary_dir]
         end
 
         def xcconfig_replace_path

@@ -19,8 +19,6 @@ module Pod
         class PodSourceInstaller
 
             def install_for_prebuild!(standard_sanbox)
-            #     return if standard_sanbox.local? self.name
-
                 prebuild_sandbox = BinaryPrebuild::Sandbox.from_sandbox(standard_sanbox)
                 return if prebuild_sandbox.nil?
                 target_names = prebuild_sandbox.existed_target_names(self.name)
@@ -156,11 +154,6 @@ module Pod
                 targets.each do |target|
                     # the framework_file_path rule is decided when `install_for_prebuild`,
                     # as to compitable with older version and be less wordy.
-                    # framework_file_path = target.framework_name
-                    # framework_file_path = target.name + "/" + framework_file_path if targets.count > 1
-                    
-                    break if spec.name.to_s =~ /[^\/]*\/[^\/]*/
-                    
                     prebuild_sandbox.prebuild_vendored_frameworks(spec.root.name).each do |frame_file_path|
                         framework_file_path = "_Prebuild/" + frame_file_path
                         add_vendered_framework(spec, target.platform.name.to_s, framework_file_path)
@@ -228,9 +221,7 @@ module Pod
 
             pods_to_install = sandbox_state.added | sandbox_state.changed
             unless pods_to_install.include?(pod_name)
-                if self.prebuild_pod_names.include? pod_name
-                    pod_installer.install_for_prebuild!(self.sandbox)
-                end
+                pod_installer.install_for_prebuild!(self.sandbox) if self.prebuild_pod_names.include? pod_name
             end
             pod_installer
         end
