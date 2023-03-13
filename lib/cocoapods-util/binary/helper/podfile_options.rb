@@ -18,6 +18,7 @@ module Pod
           @reject_header_search_pod_names << Specification.root_name(name) if options.is_a?(Hash) && options.include?(:framework_search_header) && !options[:framework_search_header]
 
           options.delete(:binary) if options.is_a?(Hash)
+          options.delete(:framework_search_header) if options.is_a?(Hash)
           requirements.pop if options.empty?
         end
   
