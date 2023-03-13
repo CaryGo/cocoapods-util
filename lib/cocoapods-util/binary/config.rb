@@ -42,7 +42,7 @@ module BinaryPrebuild
         end
 
         def binary_dir
-            @dsl_config[:binary_dir]
+            @dsl_config[:binary_dir] || '_Prebuild'
         end
 
         def xcconfig_replace_path
