@@ -1,5 +1,3 @@
-require_relative '../helper/podfile_options'
-
 module CocoapodsUtilHook
     Pod::HooksManager.register('cocoapods-util', :pre_install) do |installer_context, _|
         require_relative 'pre_install'

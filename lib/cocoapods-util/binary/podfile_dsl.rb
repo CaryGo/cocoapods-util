@@ -4,6 +4,8 @@ module Pod
             def config_cocoapods_util(options)
                 BinaryPrebuild.config.dsl_config = options
                 BinaryPrebuild.config.validate_dsl_config
+
+                require_relative 'helper/podfile_options'
             end
         end
     end
