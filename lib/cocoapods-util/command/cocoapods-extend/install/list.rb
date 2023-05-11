@@ -30,11 +30,16 @@ module Pod
   
             def run
               if @lockfile_path.nil?
+                # 新的方式解析依赖，原来的方式是使用正则分析 .lock 的文件
                 @lockfile = Pod::Config.instance.lockfile
+                help! '你需要在Podfile所在目录执行本命令。' if @lockfile.nil?
+                require_relative 'analysis'
+                PodAnalysis.new(@name, @showmore).run
+                return
               else
                 @lockfile = Lockfile.from_file(Pathname.new(@lockfile_path))
+                help! '没有查找到Podfile.lock文件，你需要在Podfile所在目录执行或传入Podfile.lock文件路径。' unless @lockfile
               end
-              help! '没有查找到Podfile.lock文件，你需要在Podfile所在目录执行或传入Podfile.lock文件路径。' unless @lockfile
 
               if @all_componment
                 check_all_componment
