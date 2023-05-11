@@ -3,22 +3,17 @@ module Pod
         def initialize(name, showmore)
             @name = name
             @showmore = showmore
+            @lockfile = Pod::Config.instance.lockfile
         end
 
         def run
-            config = Pod::Config.instance
-            @lockfile = config.lockfile
-            @installer = Pod::Installer.new(config.sandbox, config.podfile, config.lockfile)
-            @installer.sandbox.prepare # sandbox prepare
-            @installer.resolve_dependencies # 解析依赖
-            
             all_pods = all_installed_pods!
             # 忽略大小写检查name
             match_pods = all_pods.select { |pod_name| @name && pod_name.downcase == @name.downcase }
             @name = match_pods.first if match_pods.size == 1
 
             # 解析所有依赖
-            all_pod_analysis!
+            all_pod_analysis! if @showmore
 
             if @name && all_pods.include?(@name)
                 check_podinfo(@name)
@@ -30,7 +25,7 @@ module Pod
         end
 
         def check_podinfo(name, index=1)
-            UI.puts "#{index}).".red " #{name} ".green "(#{pods_tag![name]})".yellow
+            UI.puts "#{index}).".red " #{name} ".green "#{pods_tag![name]}".yellow
             
             # repo spec
             repo_name = pod_spec_repos![name]
@@ -79,6 +74,11 @@ module Pod
         end
 
         def all_pod_analysis!
+            config = Pod::Config.instance
+            @installer = Pod::Installer.new(config.sandbox, config.podfile, config.lockfile)
+            @installer.sandbox.prepare # sandbox prepare
+            @installer.resolve_dependencies # 解析依赖
+
             # 递归查找依赖
             def recursion_dependent_targets(target)
                 target.dependent_targets.flat_map {|t|
@@ -109,10 +109,6 @@ module Pod
             end
         end
 
-        def dependent_targets!(pod_name)
-            
-        end
-
         def all_installed_pods!
             @installed_pods ||= @lockfile.internal_data["SPEC CHECKSUMS"].flat_map { |k, _| k }
         end
@@ -120,12 +116,12 @@ module Pod
         def pods_tag!
             @tags ||= begin
                 tags = {}
-                all_installed_pods!.each do |name|
-                    target = @targets_hash[name].first
-                    next if target.nil?
-                    spec = target.specs.first
-                    next if spec.nil?
-                    tags[name] = spec.version.to_s
+                @lockfile.internal_data["PODS"].each do |item|
+                    pod_info = item.keys.first if item.is_a?(Hash) && item.count == 1
+                    pod_info = item if item.is_a?(String)
+                    name = pod_info.match(/^[^\/\s]*/).to_s
+                    tag = pod_info.match(/\(.*\)/).to_s
+                    tags[name] = tag unless tags.keys.include?(name)
                 end
                 tags
             end
