@@ -1,22 +1,75 @@
-### **cocoapods-util是一个pod插件集合，集成了一些ios开发过程中提效的一些插件。**
+### cocoapods-util介绍
+cocoapods-util是一个用于iOS开发提效的一个cocoapods插件。
 
-# Installation
+目前功能有：
+
+1.  pod repo push命令优化
+2.  列出当前工程安装的pod组件和pod间的依赖关系
+3.  根据podspec文件打包生成二进制
+4.  把现有framework生成xcframework
+5.  二进制源码链接调试
+6.  对工程project.pbxproj文件去除重复引用
+
+# 安装
 
 ```
 $ gem install cocoapods-util
 ```
 
-# Usage
+# 使用介绍
 
 ```
 $ pod util --help
 ```
 
-![fde10974894037fe52660a72e4057929.png](./assets/fde10974894037fe52660a72e4057929.png)
+![fde10974894037fe52660a72e4057929.png](./assets/a420d39f7d70131c2f65645e699ac9c5.png)
 
-# 功能
+## 1. repo push
 
-## package
+推送私有pods仓库的命令，可以跳过验证和跳过编译过程，用于快速发布私有pod。
+
+- 可以通过添加--skip-validate的选项跳过验证步骤。
+- 可以通过添加--skip-build的选项跳过编译，但是会验证tag，需要确保tag已存在。
+
+```
+$ pod util repo push --help
+```
+
+![2947331da6ee0c269dbd6ea073d15d4e.png](./assets/2947331da6ee0c269dbd6ea073d15d4e.png)
+
+该命令是一个提效命令，在推送自己私有仓库的时候可以通过设置--skip-validate选项跳过验证直接推送到私有仓库。
+
+```
+$ pod util repo push [yourSpecs] [xxx.podspec] --skip-validate
+```
+
+当然你也可以不使用--skip-validate，参数设置和`pod repo push`命令一致
+
+## 2. install list
+
+列出安装的pod库及所有pod之间的依赖关系，可避免频繁查看Podfile.lock查看组件依赖关系。
+
+- 该命令同样为提效命令，可以省去开发者自己去阅读Podfile.lock文件的时间，直接友好的提示开发者
+- 可以清晰的看出引用的组件个数、组件依赖、组件分支tag信息、仓库地址等有效信息
+- 建议在Podfile文件所在目录执行此命令
+
+```
+$ pod util install list --help
+```
+
+![f839eae390ea7871a5afecec093dd39c.png](./assets/f839eae390ea7871a5afecec093dd39c.png)
+
+可以在Podfile.lock的同级目录下执行或指定Podfile.lock的路径
+
+```
+$ pod util install list --showmore
+$ pod util install list ~/Desktop/xxxx/ProjectA/Podfile.lock --showmore
+```
+
+![3be13cd62a8450a7c8b2a3fa728984c6.png](./assets/3be13cd62a8450a7c8b2a3fa728984c6.png)
+
+
+## 3. package
 
 ### 介绍
 
@@ -96,7 +149,7 @@ $ -build-settings='{"EXCLUDED_ARCHS[sdk=iphonesimulator*]":"arm64","BUILD_LIBRAR
 $ --dependency-config='{"PodA":{"git":"xxx","branch":"xxx"},"PodB":{"source":"xxx"}}'
 ```
 
-## xcframework
+## 4. xcframework
 
 ### 介绍
 
@@ -118,7 +171,7 @@ $ pod util xcframework Alamofire.framework --force
 
 ![23332974a4941bae97010afb4b4d4c1c.png](./assets/23332974a4941bae97010afb4b4d4c1c.png)
 
-## linksource
+## 5. linksource
 
 源码二进制链接功能。
 
@@ -128,44 +181,24 @@ $ pod util linksource --help
 
 ![b605570c681e5d7877f08458cfd1dbc7.png](./assets/b605570c681e5d7877f08458cfd1dbc7.png)
 
-## repo push
 
-推送私有pods仓库的命令。
+## 6. uniq
 
-- 可以通过添加--skip-validate的选项跳过验证步骤。
+对xcodeproj --> project.pbxproj文件做重复引用的去重。
 
-```
-$ pod util repo push --help
-```
+该命令的来源是我发现工程的.pbxproj文件变得非常大，最大时发现有10M的大小，在执行pod的更新时会卡在install的执行过程`User Project Integration`这一步很长的时间。
 
-![2947331da6ee0c269dbd6ea073d15d4e.png](./assets/2947331da6ee0c269dbd6ea073d15d4e.png)
+我检查了一下这个工程文件，发现这里面有许多重复的引用，这是由于项目长期merge代码的过程中没有很好的解决冲突，保留了相同的引用，所以才有了这个命令。
 
-该命令是一个提效命令，在推送自己私有仓库的时候可以通过设置--skip-validate选项跳过验证直接推送到私有仓库。
+我尝试对pbxproj文件做了去重，文件大小从10M减小到了1.7M，再执行pod install安装时就不会再卡在`User Project Integration`这一步骤了。
 
 ```
-$ pod util repo push [yourSpecs] [xxx.podspec] --skip-validate
+$ pod util uniq --help
 ```
 
-当然你也可以不使用--skip-validate，参数设置和`pod repo push`命令一致
+![fbbe647899cc08e867db9238991c1951.png](./assets/fbbe647899cc08e867db9238991c1951.png)
 
-## install list
-
-列出安装的pod库及相关依赖信息。
-
-- 该命令同样为提效命令，可以省去开发者自己去阅读Podfile.lock文件的时间，直接友好的提示开发者
-- 可以清晰的看出引用的组件个数、组件依赖、组件分支tag信息、仓库地址等有效信息
-
+### 示例
 ```
-$ pod util install list --help
+$ pod util uniq project.xcodeproj
 ```
-
-![f839eae390ea7871a5afecec093dd39c.png](./assets/f839eae390ea7871a5afecec093dd39c.png)
-
-可以在Podfile.lock的同级目录下执行或指定Podfile.lock的路径
-
-```
-$ pod util install list --showmore
-$ pod util install list ~/Desktop/xxxx/ProjectA/Podfile.lock --showmore
-```
-
-![3be13cd62a8450a7c8b2a3fa728984c6.png](./assets/3be13cd62a8450a7c8b2a3fa728984c6.png)
