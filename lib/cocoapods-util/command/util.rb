@@ -1,6 +1,7 @@
 require_relative 'package/package'
 require_relative 'xcframework/xcframework'
 require_relative 'libsource/source'
+require_relative 'search/search'
 require_relative 'cocoapods-extend/extend'
 
 module Pod
