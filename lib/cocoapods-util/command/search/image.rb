@@ -32,6 +32,7 @@ module Pod
   
             def run
               search
+              query
             end
 
             def search
